@@ -879,6 +879,158 @@
     .notif-item-title { font-weight: 700; margin-bottom: 2px; }
     .notif-item-meta { font-size: 0.72rem; color: var(--text-muted); }
     .notif-empty { padding: 30px 20px; text-align: center; color: var(--text-muted); font-size: 0.85rem; }
+  /* ── SOP PAGE ──────────────────────────────────────────────── */
+  .sop-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 18px;
+  }
+  .sop-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px 20px 18px;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: box-shadow 0.18s, border-color 0.18s;
+  }
+  .sop-card:hover { box-shadow: var(--shadow-lg); border-color: var(--blue-200); }
+  .sop-card-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .sop-card-icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    background: linear-gradient(135deg, var(--blue-500), var(--accent));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem; flex-shrink: 0;
+  }
+  .sop-card-title {
+    font-size: 0.95rem; font-weight: 700; color: var(--text); line-height: 1.3;
+  }
+  .sop-card-notes {
+    font-size: 0.8rem; color: var(--text-muted); line-height: 1.5;
+    min-height: 20px;
+  }
+  .sop-card-meta {
+    font-size: 0.72rem; color: var(--text-muted);
+    border-top: 1px solid var(--border); padding-top: 10px;
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .sop-card-actions {
+    display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+  }
+  .sop-link-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: var(--blue-50); color: var(--blue-700);
+    border: 1px solid var(--blue-200);
+    border-radius: 7px; padding: 6px 12px;
+    font-size: 0.78rem; font-weight: 600;
+    cursor: pointer; transition: all 0.15s; text-decoration: none;
+  }
+  .sop-link-btn:hover { background: var(--blue-100); border-color: var(--blue-400); }
+  .sop-link-btn.empty { opacity: 0.45; cursor: default; pointer-events: none; }
+  .sop-edit-btn {
+    margin-left: auto;
+    background: transparent; border: 1px solid var(--border);
+    border-radius: 7px; padding: 6px 10px;
+    font-size: 0.78rem; color: var(--text-muted);
+    cursor: pointer; transition: all 0.15s;
+  }
+  .sop-edit-btn:hover { background: var(--blue-50); color: var(--blue-700); border-color: var(--blue-200); }
+
+  /* ── MOBILE HAMBURGER ──────────────────────────────────────── */
+  .hamburger {
+    display: none;
+    background: none; border: none;
+    font-size: 1.4rem; cursor: pointer;
+    color: var(--blue-800); padding: 4px 6px;
+    line-height: 1;
+  }
+  .sidebar-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 99;
+  }
+  .sidebar-overlay.active { display: block; }
+
+  /* ── RESPONSIVE / MOBILE ───────────────────────────────────── */
+  @media (max-width: 768px) {
+    /* Sidebar becomes a slide-in drawer */
+    .sidebar {
+      transform: translateX(-100%);
+      transition: transform 0.28s ease;
+      z-index: 200;
+      width: 260px;
+    }
+    .sidebar.open { transform: translateX(0); }
+
+    /* Main takes full width */
+    .main { margin-left: 0; }
+
+    /* Topbar */
+    .topbar { padding: 0 16px; gap: 10px; }
+    .topbar-search { display: none; }
+    .hamburger { display: flex; align-items: center; }
+    .topbar-date { display: none; }
+
+    /* Page content */
+    .page-content { padding: 16px; }
+
+    /* Page header stacks on small screens */
+    .page-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .page-header .btn { width: 100%; justify-content: center; }
+
+    /* Stat grid: 2 cols on mobile */
+    .stat-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .stat-card { padding: 16px 12px; }
+    .stat-value { font-size: 1.6rem; }
+
+    /* Dash grid: 1 col */
+    .dash-grid { grid-template-columns: 1fr; }
+
+    /* Filter bar wraps */
+    .filter-bar { flex-wrap: wrap; gap: 8px; }
+    .filter-input, .filter-select { min-width: 0; flex: 1 1 140px; }
+
+    /* Tables: horizontal scroll */
+    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    table { min-width: 600px; }
+
+    /* Modals full-width on mobile */
+    .modal {
+      width: calc(100vw - 24px);
+      max-height: 90vh;
+      overflow-y: auto;
+      margin: 12px;
+    }
+    .form-row { flex-direction: column; gap: 0; }
+
+    /* SOP grid: 1 col on small screens */
+    .sop-grid { grid-template-columns: 1fr; }
+
+    /* Profile grid: 2 cols fit fine on mobile */
+    .profile-grid { grid-template-columns: repeat(2, 160px); gap: 12px; }
+    .profile-card { padding: 22px 14px 18px; }
+    .profile-avatar { width: 52px; height: 52px; font-size: 1.3rem; }
+
+    /* Notification panel full width */
+    #notif-panel { width: 100%; right: 0; }
+  }
+
+  @media (max-width: 420px) {
+    .stat-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .profile-grid { grid-template-columns: repeat(2, 140px); gap: 10px; }
+    .profile-logo { font-size: 1.8rem; }
+  }
   </style>
 </head>
 <body>
@@ -955,8 +1107,11 @@
      MAIN APP
 ═══════════════════════════════════════════════════════════════ -->
 <div id="app">
+  <!-- SIDEBAR OVERLAY (mobile) -->
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
   <!-- SIDEBAR -->
-  <aside class="sidebar">
+  <aside class="sidebar" id="sidebar">
     <div class="sidebar-brand">
       <div class="sidebar-brand-title">QC<span>Board</span></div>
       <div class="sidebar-brand-sub">Quality Control System</div>
@@ -988,6 +1143,9 @@
       <div class="nav-item" onclick="showPage('trials',this)">
         <span class="nav-icon">🧪</span> Trial Reports
       </div>
+      <div class="nav-item" onclick="showPage('sop',this)">
+        <span class="nav-icon">📄</span> SOP
+      </div>
     </nav>
     <div class="sidebar-footer">
       <button class="btn-switch-profile" onclick="switchProfile()">↩ Switch Profile</button>
@@ -997,6 +1155,7 @@
   <!-- MAIN -->
   <main class="main">
     <div class="topbar">
+      <button class="hamburger" onclick="openSidebar()" aria-label="Open menu">☰</button>
       <div class="topbar-title" id="topbar-title">Dashboard</div>
       <div class="topbar-search">
         <input id="global-search" type="text" placeholder="Search to-dos, specs, trials, training… (try: Yogurt)" oninput="onGlobalSearch()" onfocus="onGlobalSearch()" />
@@ -1263,6 +1422,19 @@
           </div>
         </div>
       </div>
+      <!-- ── SOP PAGE ──────────────────────────────────────── -->
+      <div id="page-sop" class="page">
+        <div class="page-header">
+          <div>
+            <h1>SOP</h1>
+            <p>Standard Operating Procedures — Google Drive documents</p>
+          </div>
+        </div>
+        <div class="sop-grid" id="sop-grid">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+
     </div><!-- /page-content -->
   </main>
 </div><!-- /app -->
@@ -1450,6 +1622,33 @@
   </div>
 </div>
 
+<!-- SOP Modal -->
+<div class="modal-overlay" id="modal-sop">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-sop-title">Edit SOP</div>
+      <div class="modal-close" onclick="closeModal('sop')">✕</div>
+    </div>
+    <input type="hidden" id="sop-id">
+    <div class="form-group">
+      <label class="form-label">SOP Name</label>
+      <input class="form-input" id="sop-name" disabled style="background:var(--blue-50);color:var(--text-muted);">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Google Drive Link</label>
+      <input class="form-input" id="sop-link" placeholder="https://drive.google.com/...">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Description / Notes</label>
+      <textarea class="form-input form-textarea" id="sop-notes" placeholder="Optional description or notes about this SOP..."></textarea>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="closeModal('sop')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveSOP()">Save SOP</button>
+    </div>
+  </div>
+</div>
+
 <!-- Toast Container -->
 <div id="toast-container"></div>
 
@@ -1461,8 +1660,8 @@
    🔧 CONFIGURATION — Fill these in before using!
    See SETUP_GUIDE.txt for step-by-step instructions.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-const SUPABASE_URL  = 'YOUR_SUPABASE_URL';         // e.g. https://xxxx.supabase.co
-const SUPABASE_KEY  = 'YOUR_SUPABASE_ANON_KEY';    // your anon/public key
+const SUPABASE_URL  = 'https://naeodlgencnztaraaofi.supabase.co';
+const SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5hZW9kbGdlbmNuenRhcmFhb2ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNzk0ODYsImV4cCI6MjA5NDc1NTQ4Nn0.421qpc7XrG1iNyEadai9NFbkIeAt87lfqjv3lQHYu5o';
 const OPENAI_KEY    = 'YOUR_OPENAI_API_KEY';        // optional, for AI summaries
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1478,7 +1677,8 @@ let demoData = {
   training_schedules: [],
   todos: [],
   product_specifications: [],
-  trial_reports: []
+  trial_reports: [],
+  sop_documents: []
 };
 
 function initSupabase() {
@@ -1772,6 +1972,7 @@ function showPage(name, el) {
   else if (name === 'todo') loadTodoPage();
   else if (name === 'specs') loadSpecsPage();
   else if (name === 'trials') loadTrialsPage();
+  else if (name === 'sop') loadSOPPage();
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -2299,6 +2500,124 @@ async function deleteTrial(id) {
   if (!confirm('Delete this report?')) return;
   await dbDelete('trial_reports', id); showToast('Deleted!','success');
   loadTrialsPage(); loadDashboard();
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   MOBILE SIDEBAR
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function openSidebar() {
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('sidebar-overlay').classList.add('active');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('active');
+}
+// Close sidebar when a nav item is clicked on mobile
+document.querySelectorAll('.nav-item').forEach(el => {
+  el.addEventListener('click', () => { if (window.innerWidth <= 768) closeSidebar(); });
+});
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   SOP
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+const SOP_ITEMS = [
+  { key: 'sop_inbound',           label: 'SOP Inbound',                  icon: '📥' },
+  { key: 'sop_pengecekan_kitchen',label: 'SOP Pengecekan Kitchen',        icon: '🍳' },
+  { key: 'sop_kalibrasi_alat',    label: 'SOP Kalibrasi Alat',           icon: '⚖️' },
+  { key: 'sop_penggunaan_instrumen', label: 'SOP Penggunaan Instrumen',  icon: '🔬' },
+  { key: 'sop_outbound',          label: 'SOP Outbound',                 icon: '📤' },
+  { key: 'sop_personal_hygiene',  label: 'SOP Personal Hygiene',         icon: '🧼' },
+  { key: 'kumpulan_opl',          label: 'Kumpulan OPL',                 icon: '📚' },
+];
+
+let sopData = {};
+
+async function loadSOPPage() {
+  // Fetch all SOP records from supabase table 'sop_documents'
+  const rows = await dbGet('sop_documents');
+  sopData = {};
+  rows.forEach(r => { sopData[r.sop_key] = r; });
+  renderSOPGrid();
+}
+
+function renderSOPGrid() {
+  const grid = document.getElementById('sop-grid');
+  grid.innerHTML = SOP_ITEMS.map(item => {
+    const rec = sopData[item.key] || {};
+    const hasLink = !!rec.google_drive_link;
+    const updatedBy = rec.last_updated_by || '—';
+    const updatedAt = rec.last_updated_at ? fmtDateTime(rec.last_updated_at) : '—';
+    const notes = rec.notes || '';
+    return `
+    <div class="sop-card">
+      <div class="sop-card-header">
+        <div class="sop-card-icon">${item.icon}</div>
+        <div class="sop-card-title">${item.label}</div>
+      </div>
+      ${notes ? `<div class="sop-card-notes">${notes}</div>` : '<div class="sop-card-notes" style="color:var(--blue-200);font-style:italic">No description yet</div>'}
+      <div class="sop-card-actions">
+        <a class="sop-link-btn${hasLink ? '' : ' empty'}" href="${rec.google_drive_link || '#'}" target="_blank" ${!hasLink ? 'tabindex="-1"' : ''}>
+          📁 ${hasLink ? 'Open Drive' : 'No link yet'}
+        </a>
+        <button class="sop-edit-btn officer-only" onclick="editSOP('${item.key}')">✏️ Edit</button>
+      </div>
+      <div class="sop-card-meta">
+        <span>Updated by: <strong>${updatedBy}</strong></span>
+        <span>${updatedAt}</span>
+      </div>
+    </div>`;
+  }).join('');
+  // Apply role visibility
+  if (currentRole === 'field') {
+    document.querySelectorAll('#sop-grid .officer-only').forEach(el => el.style.display = 'none');
+  }
+}
+
+function editSOP(key) {
+  if (blockIfField()) return;
+  const item = SOP_ITEMS.find(i => i.key === key);
+  const rec = sopData[key] || {};
+  document.getElementById('sop-id').value = rec.id || '';
+  document.getElementById('sop-name').value = item ? item.label : key;
+  document.getElementById('sop-link').value = rec.google_drive_link || '';
+  document.getElementById('sop-notes').value = rec.notes || '';
+  document.getElementById('modal-sop-title').textContent = `Edit: ${item ? item.label : key}`;
+  // store key for save
+  document.getElementById('sop-id').dataset.key = key;
+  document.getElementById('modal-sop').classList.add('active');
+}
+
+async function saveSOP() {
+  if (blockIfField()) return;
+  const key = document.getElementById('sop-id').dataset.key;
+  const id = document.getElementById('sop-id').value;
+  const row = {
+    sop_key: key,
+    google_drive_link: document.getElementById('sop-link').value.trim(),
+    notes: document.getElementById('sop-notes').value.trim(),
+    last_updated_by: currentUser,
+    last_updated_at: new Date().toISOString()
+  };
+  if (id) {
+    await dbUpdate('sop_documents', parseInt(id), row);
+    showToast('SOP updated!', 'success');
+  } else {
+    await dbInsert('sop_documents', row);
+    showToast('SOP saved!', 'success');
+  }
+  document.getElementById('modal-sop').classList.remove('active');
+  loadSOPPage();
+}
+
+function fmtDateTime(d) {
+  if (!d) return '—';
+  try {
+    return new Date(d).toLocaleString('en-GB', {
+      day: '2-digit', month: 'short', year: 'numeric',
+      hour: '2-digit', minute: '2-digit'
+    });
+  } catch { return d; }
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
