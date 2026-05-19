@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>QC Supervisor Dashboard</title>
+  <title>QC Officer Dashboard</title>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -769,6 +769,116 @@
       font-family: monospace;
       font-size: 0.8rem;
     }
+
+    /* ── ROLE GATING ───────────────────────────────────────────── */
+    body.role-field .officer-only { display: none !important; }
+
+    /* ── PASSWORD MODAL ────────────────────────────────────────── */
+    #pw-overlay {
+      position: fixed; inset: 0; background: rgba(15,23,42,0.65);
+      backdrop-filter: blur(6px);
+      display: none; align-items: center; justify-content: center; z-index: 9999;
+    }
+    #pw-overlay.active { display: flex; }
+    .pw-box {
+      background: #fff; border-radius: 16px; padding: 28px 28px 22px;
+      width: 340px; box-shadow: 0 24px 60px rgba(0,0,0,0.25);
+      text-align: center;
+    }
+    .pw-box h3 { color: var(--text); margin-bottom: 6px; font-size: 1.1rem; }
+    .pw-box p { color: var(--text-muted); font-size: 0.82rem; margin-bottom: 14px; }
+    .pw-input {
+      width: 100%; padding: 11px 14px; border-radius: 9px;
+      border: 1.5px solid var(--border); font-size: 0.95rem;
+      margin-bottom: 12px; background: var(--blue-50);
+    }
+    .pw-input:focus { border-color: var(--blue-500); background: #fff; }
+    .pw-error { color: var(--red); font-size: 0.78rem; min-height: 1em; margin-bottom: 8px; }
+    .pw-actions { display: flex; gap: 8px; }
+    .pw-actions button { flex: 1; padding: 9px; border-radius: 8px; font-weight: 600; }
+
+    /* ── TOPBAR SEARCH + BELL ──────────────────────────────────── */
+    .topbar-search {
+      position: relative; flex: 1; max-width: 480px; margin: 0 16px;
+    }
+    .topbar-search input {
+      width: 100%; padding: 9px 14px 9px 36px; border-radius: 10px;
+      background: var(--blue-50); border: 1.5px solid transparent;
+      font-size: 0.85rem; color: var(--text); transition: all 0.15s;
+    }
+    .topbar-search input:focus { background: #fff; border-color: var(--blue-300); }
+    .topbar-search::before {
+      content: '🔍'; position: absolute; left: 12px; top: 50%;
+      transform: translateY(-50%); font-size: 0.85rem; opacity: 0.6;
+    }
+    .search-results {
+      position: absolute; top: calc(100% + 6px); left: 0; right: 0;
+      background: #fff; border-radius: 12px; box-shadow: var(--shadow-lg);
+      max-height: 460px; overflow-y: auto; z-index: 80;
+      border: 1px solid var(--border); display: none;
+    }
+    .search-results.active { display: block; }
+    .search-ai {
+      padding: 12px 14px; background: linear-gradient(135deg, var(--blue-50), #f0f9ff);
+      border-bottom: 1px solid var(--border); font-size: 0.78rem;
+      color: var(--text); line-height: 1.5;
+    }
+    .search-ai .ai-label { margin-bottom: 4px; }
+    .search-section { padding: 6px 0; border-bottom: 1px solid var(--border); }
+    .search-section:last-child { border-bottom: none; }
+    .search-section-title {
+      font-size: 0.66rem; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--text-muted); padding: 6px 14px 4px;
+    }
+    .search-item {
+      padding: 8px 14px; font-size: 0.82rem; color: var(--text);
+      cursor: pointer; display: flex; gap: 8px; align-items: flex-start;
+    }
+    .search-item:hover { background: var(--blue-50); }
+    .search-item-icon { font-size: 0.95rem; flex-shrink: 0; }
+    .search-item-title { font-weight: 600; }
+    .search-item-meta { font-size: 0.72rem; color: var(--text-muted); margin-top: 1px; }
+
+    .bell-btn {
+      position: relative; background: var(--blue-50); color: var(--blue-700);
+      width: 38px; height: 38px; border-radius: 10px; font-size: 1.05rem;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .bell-btn:hover { background: var(--blue-100); }
+    .bell-dot {
+      position: absolute; top: 6px; right: 7px; width: 8px; height: 8px;
+      background: var(--red); border-radius: 50%; border: 2px solid #fff;
+      display: none;
+    }
+    .bell-dot.active { display: block; }
+    #notif-panel {
+      position: fixed; top: 0; right: 0; height: 100vh; width: 380px;
+      background: #fff; box-shadow: -8px 0 32px rgba(0,0,0,0.12);
+      transform: translateX(100%); transition: transform 0.25s ease;
+      z-index: 200; display: flex; flex-direction: column;
+    }
+    #notif-panel.active { transform: translateX(0); }
+    .notif-head {
+      padding: 18px 20px; border-bottom: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .notif-head h3 { color: var(--text); font-size: 1.05rem; }
+    .notif-close { font-size: 1.3rem; color: var(--text-muted); cursor: pointer; }
+    .notif-body { flex: 1; overflow-y: auto; padding: 8px 0; }
+    .notif-group-title {
+      font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--text-muted); padding: 14px 20px 6px;
+    }
+    .notif-item {
+      padding: 10px 20px; font-size: 0.82rem; color: var(--text);
+      border-left: 3px solid transparent;
+    }
+    .notif-item.training { border-left-color: var(--blue-500); background: var(--blue-50); }
+    .notif-item.task { border-left-color: var(--amber); background: #fffbeb; }
+    .notif-item.announce { border-left-color: var(--green); background: #f0fdf4; }
+    .notif-item-title { font-weight: 700; margin-bottom: 2px; }
+    .notif-item-meta { font-size: 0.72rem; color: var(--text-muted); }
+    .notif-empty { padding: 30px 20px; text-align: center; color: var(--text-muted); font-size: 0.85rem; }
   </style>
 </head>
 <body>
@@ -778,28 +888,65 @@
 ═══════════════════════════════════════════════════════════════ -->
 <div id="profile-page">
   <div class="profile-logo">QC<span>Board</span></div>
-  <div class="profile-subtitle">Quality Control Supervisor Dashboard</div>
-  <div class="profile-label">Select Your Profile</div>
+  <div class="profile-subtitle">Quality Control Officer Dashboard</div>
+  <div class="profile-label">QC Officer</div>
   <div class="profile-grid">
-    <div class="profile-card" onclick="selectProfile('Nashir','#2563eb')">
+    <div class="profile-card" onclick="selectProfile('Nashir','officer','#2563eb')">
       <div class="profile-avatar" style="background:linear-gradient(135deg,#2563eb,#38bdf8)">N</div>
       <div class="profile-name">Nashir</div>
-      <div class="profile-role">QC Supervisor</div>
+      <div class="profile-role">QC Officer</div>
     </div>
-    <div class="profile-card" onclick="selectProfile('Gina','#7c3aed')">
+    <div class="profile-card" onclick="selectProfile('Gina','officer','#7c3aed')">
       <div class="profile-avatar" style="background:linear-gradient(135deg,#7c3aed,#a78bfa)">G</div>
       <div class="profile-name">Gina</div>
-      <div class="profile-role">QC Supervisor</div>
+      <div class="profile-role">QC Officer</div>
     </div>
-    <div class="profile-card" onclick="selectProfile('Lussy','#0891b2')">
+    <div class="profile-card" onclick="selectProfile('Lussy','officer','#0891b2')">
       <div class="profile-avatar" style="background:linear-gradient(135deg,#0891b2,#22d3ee)">L</div>
       <div class="profile-name">Lussy</div>
-      <div class="profile-role">QC Supervisor</div>
+      <div class="profile-role">QC Officer</div>
     </div>
-    <div class="profile-card" onclick="selectProfile('Bianca','#059669')">
+    <div class="profile-card" onclick="selectProfile('Bianca','officer','#059669')">
       <div class="profile-avatar" style="background:linear-gradient(135deg,#059669,#34d399)">B</div>
       <div class="profile-name">Bianca</div>
-      <div class="profile-role">QC Supervisor</div>
+      <div class="profile-role">QC Officer</div>
+    </div>
+  </div>
+  <div class="profile-label" style="margin-top:36px">QC Field</div>
+  <div class="profile-grid">
+    <div class="profile-card" onclick="selectProfile('Rio','field','#f59e0b')">
+      <div class="profile-avatar" style="background:linear-gradient(135deg,#f59e0b,#fbbf24)">R</div>
+      <div class="profile-name">Rio</div>
+      <div class="profile-role">QC Field · view only</div>
+    </div>
+    <div class="profile-card" onclick="selectProfile('Syahdan','field','#14b8a6')">
+      <div class="profile-avatar" style="background:linear-gradient(135deg,#14b8a6,#5eead4)">S</div>
+      <div class="profile-name">Syahdan</div>
+      <div class="profile-role">QC Field · view only</div>
+    </div>
+    <div class="profile-card" onclick="selectProfile('Gerrie','field','#a855f7')">
+      <div class="profile-avatar" style="background:linear-gradient(135deg,#a855f7,#c084fc)">G</div>
+      <div class="profile-name">Gerrie</div>
+      <div class="profile-role">QC Field · view only</div>
+    </div>
+    <div class="profile-card" onclick="selectProfile('Putri','field','#ef4444')">
+      <div class="profile-avatar" style="background:linear-gradient(135deg,#ef4444,#fca5a5)">P</div>
+      <div class="profile-name">Putri</div>
+      <div class="profile-role">QC Field · view only</div>
+    </div>
+  </div>
+</div>
+
+<!-- Password gate for officers -->
+<div id="pw-overlay">
+  <div class="pw-box">
+    <h3 id="pw-title">Officer Password</h3>
+    <p>Enter the shared officer password to continue.</p>
+    <input id="pw-input" type="password" class="pw-input" placeholder="Password" autocomplete="off" />
+    <div id="pw-error" class="pw-error"></div>
+    <div class="pw-actions">
+      <button class="btn btn-secondary" onclick="cancelPassword()">Cancel</button>
+      <button class="btn btn-primary" onclick="submitPassword()">Continue</button>
     </div>
   </div>
 </div>
@@ -818,7 +965,7 @@
       <div class="sidebar-user-av" id="sb-avatar" style="background:var(--blue-600)">N</div>
       <div>
         <div class="sidebar-user-name" id="sb-name">Nashir</div>
-        <div class="sidebar-user-role">QC Supervisor</div>
+        <div class="sidebar-user-role" id="sb-role">QC Officer</div>
       </div>
     </div>
     <nav class="sidebar-nav">
@@ -851,9 +998,25 @@
   <main class="main">
     <div class="topbar">
       <div class="topbar-title" id="topbar-title">Dashboard</div>
+      <div class="topbar-search">
+        <input id="global-search" type="text" placeholder="Search to-dos, specs, trials, training… (try: Yogurt)" oninput="onGlobalSearch()" onfocus="onGlobalSearch()" />
+        <div id="search-results" class="search-results"></div>
+      </div>
       <div class="topbar-right">
+        <button class="bell-btn" onclick="toggleNotifPanel()" title="Notifications">
+          🔔<span id="bell-dot" class="bell-dot"></span>
+        </button>
         <div class="topbar-date" id="topbar-date"></div>
       </div>
+    </div>
+
+    <!-- Notifications side panel -->
+    <div id="notif-panel">
+      <div class="notif-head">
+        <h3 id="notif-title">Notifications</h3>
+        <div class="notif-close" onclick="toggleNotifPanel(false)">✕</div>
+      </div>
+      <div id="notif-body" class="notif-body"></div>
     </div>
 
     <div class="page-content">
@@ -938,7 +1101,7 @@
             <h1>Training Schedule</h1>
             <p>Manage employee training assignments and deadlines</p>
           </div>
-          <button class="btn btn-primary" onclick="openModal('training')">+ Add Training</button>
+          <button class="btn btn-primary officer-only" onclick="openModal('training')">+ Add Training</button>
         </div>
         <div class="filter-bar">
           <input class="filter-input" type="text" id="training-search" placeholder="🔍 Search trainings..." oninput="renderTrainingTable()">
@@ -969,7 +1132,7 @@
                   <th>Reminder</th>
                   <th>Status</th>
                   <th>Updated By</th>
-                  <th>Actions</th>
+                  <th class="officer-only">Actions</th>
                 </tr>
               </thead>
               <tbody id="training-tbody"></tbody>
@@ -989,7 +1152,7 @@
             <h1>To-Do List</h1>
             <p>Track and manage QC tasks with priorities and deadlines</p>
           </div>
-          <button class="btn btn-primary" onclick="openModal('todo')">+ Add Task</button>
+          <button class="btn btn-primary officer-only" onclick="openModal('todo')">+ Add Task</button>
         </div>
         <div class="filter-bar">
           <input class="filter-input" type="text" id="todo-search" placeholder="🔍 Search tasks..." oninput="renderTodoTable()">
@@ -1017,7 +1180,7 @@
                   <th>Assigned To</th>
                   <th>Deadline</th>
                   <th>Updated By</th>
-                  <th>Actions</th>
+                  <th class="officer-only">Actions</th>
                 </tr>
               </thead>
               <tbody id="todo-tbody"></tbody>
@@ -1037,7 +1200,7 @@
             <h1>Product Specifications</h1>
             <p>Manage product specs with Google Drive file links</p>
           </div>
-          <button class="btn btn-primary" onclick="openModal('specs')">+ Add Specification</button>
+          <button class="btn btn-primary officer-only" onclick="openModal('specs')">+ Add Specification</button>
         </div>
         <div class="filter-bar">
           <input class="filter-input" type="text" id="specs-search" placeholder="🔍 Search product name..." oninput="renderSpecsTable()">
@@ -1054,7 +1217,7 @@
                   <th>Summary</th>
                   <th>File</th>
                   <th>Updated By</th>
-                  <th>Actions</th>
+                  <th class="officer-only">Actions</th>
                 </tr>
               </thead>
               <tbody id="specs-tbody"></tbody>
@@ -1074,7 +1237,7 @@
             <h1>Trial Reports</h1>
             <p>Log trial reports with AI-powered summaries</p>
           </div>
-          <button class="btn btn-primary" onclick="openModal('trials')">+ Add Report</button>
+          <button class="btn btn-primary officer-only" onclick="openModal('trials')">+ Add Report</button>
         </div>
         <div class="card">
           <div class="table-wrap">
@@ -1088,7 +1251,7 @@
                   <th>Notes</th>
                   <th>File</th>
                   <th>Updated By</th>
-                  <th>Actions</th>
+                  <th class="officer-only">Actions</th>
                 </tr>
               </thead>
               <tbody id="trials-tbody"></tbody>
@@ -1372,45 +1535,215 @@ function seedDemoData() {
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   PROFILE LOGIC
+   PROFILE / ROLE LOGIC
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+const OFFICER_PASSWORD = 'kitakerenbangetcoyy';
 const profileColors = {
-  'Nashir':'#2563eb', 'Gina':'#7c3aed', 'Lussy':'#0891b2', 'Bianca':'#059669'
+  'Nashir':'#2563eb','Gina':'#7c3aed','Lussy':'#0891b2','Bianca':'#059669',
+  'Rio':'#f59e0b','Syahdan':'#14b8a6','Gerrie':'#a855f7','Putri':'#ef4444'
 };
+const profileRoles = {
+  'Nashir':'officer','Gina':'officer','Lussy':'officer','Bianca':'officer',
+  'Rio':'field','Syahdan':'field','Gerrie':'field','Putri':'field'
+};
+let currentRole = null;
+let pendingProfile = null;
 
-function selectProfile(name, color) {
-  currentUser = name;
-  localStorage.setItem('qcboard_user', name);
+function selectProfile(name, role, color) {
+  if (role === 'officer') {
+    pendingProfile = { name, role, color };
+    document.getElementById('pw-input').value = '';
+    document.getElementById('pw-error').textContent = '';
+    document.getElementById('pw-title').textContent = `Sign in as ${name}`;
+    document.getElementById('pw-overlay').classList.add('active');
+    setTimeout(() => document.getElementById('pw-input').focus(), 50);
+    return;
+  }
+  enterApp(name, role, color);
+}
+
+function cancelPassword() {
+  pendingProfile = null;
+  document.getElementById('pw-overlay').classList.remove('active');
+}
+function submitPassword() {
+  const val = document.getElementById('pw-input').value;
+  if (val !== OFFICER_PASSWORD) {
+    document.getElementById('pw-error').textContent = 'Incorrect password';
+    return;
+  }
+  document.getElementById('pw-overlay').classList.remove('active');
+  const p = pendingProfile; pendingProfile = null;
+  if (p) enterApp(p.name, p.role, p.color);
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.getElementById('pw-overlay').classList.contains('active')) submitPassword();
+  if (e.key === 'Escape' && document.getElementById('pw-overlay').classList.contains('active')) cancelPassword();
+});
+
+function enterApp(name, role, color) {
+  currentUser = name; currentRole = role;
+  localStorage.setItem('qcboard_user', JSON.stringify({ name, role }));
+  document.body.classList.toggle('role-field', role === 'field');
   document.getElementById('profile-page').style.display = 'none';
   document.getElementById('app').classList.add('active');
-  updateSidebarUser(name, color || profileColors[name] || '#2563eb');
+  updateSidebarUser(name, color || profileColors[name] || '#2563eb', role);
   initSupabase();
   loadDashboard();
   updateTopbarDate();
 }
 
-function updateSidebarUser(name, color) {
+function updateSidebarUser(name, color, role) {
   document.getElementById('sb-name').textContent = name;
   document.getElementById('sb-avatar').textContent = name[0];
   document.getElementById('sb-avatar').style.background = color || profileColors[name] || '#2563eb';
-  document.getElementById('dash-welcome').textContent = `Welcome back, ${name}. Here's your QC board.`;
+  document.getElementById('sb-role').textContent = role === 'field' ? 'QC Field · view only' : 'QC Officer';
+  const w = document.getElementById('dash-welcome');
+  if (w) w.textContent = `Welcome back, ${name}. Here's your QC board.`;
 }
 
 function switchProfile() {
-  currentUser = null;
+  currentUser = null; currentRole = null;
   localStorage.removeItem('qcboard_user');
+  document.body.classList.remove('role-field');
   document.getElementById('app').classList.remove('active');
   document.getElementById('profile-page').style.display = 'flex';
 }
 
-// Auto-login if remembered
 window.addEventListener('DOMContentLoaded', () => {
-  const saved = localStorage.getItem('qcboard_user');
-  if (saved && profileColors[saved]) {
-    selectProfile(saved, profileColors[saved]);
+  const raw = localStorage.getItem('qcboard_user');
+  if (raw) {
+    try {
+      const v = JSON.parse(raw);
+      if (v && v.name && profileColors[v.name]) {
+        enterApp(v.name, v.role || profileRoles[v.name], profileColors[v.name]);
+      }
+    } catch {}
   }
   updateTopbarDate();
 });
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   ROLE GUARD — block writes for QC Field
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function blockIfField() {
+  if (currentRole === 'field') {
+    showToast('View-only access. Only officers can make changes.', 'warning');
+    return true;
+  }
+  return false;
+}
+['openModal','saveTraining','deleteTraining','editTraining','saveTodo','deleteTodo','editTodo','saveSpec','deleteSpec','editSpec','saveTrialReport','deleteTrial','editTrial']
+  .forEach(fn => {
+    const orig = window[fn];
+    if (typeof orig === 'function') {
+      window[fn] = function(...args) {
+        if (fn !== 'openModal' && blockIfField()) return;
+        if (fn === 'openModal' && blockIfField()) return;
+        return orig.apply(this, args);
+      };
+    }
+  });
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   GLOBAL SEARCH + AI SUMMARY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+let _searchTimer = null;
+async function onGlobalSearch() {
+  const q = document.getElementById('global-search').value.trim().toLowerCase();
+  const box = document.getElementById('search-results');
+  if (!q) { box.classList.remove('active'); box.innerHTML = ''; return; }
+  const [trainings, todosAll, specsAll, trialsAll] = await Promise.all([
+    dbGet('training_schedules'), dbGet('todos'),
+    dbGet('product_specifications'), dbGet('trial_reports')
+  ]);
+  const matches = {
+    todo: todosAll.filter(t => (t.task_title+' '+(t.notes||'')+' '+(t.assigned_person||'')).toLowerCase().includes(q)),
+    specs: specsAll.filter(s => (s.product_name+' '+(s.summary||'')+' '+(s.revision_number||'')).toLowerCase().includes(q)),
+    trials: trialsAll.filter(r => (r.product_name+' '+(r.notes||'')+' '+(r.ai_summary||'')).toLowerCase().includes(q)),
+    training: trainings.filter(t => (t.training_topic+' '+(t.employee_name||'')+' '+(t.trainer||'')).toLowerCase().includes(q))
+  };
+  const total = matches.todo.length + matches.specs.length + matches.trials.length + matches.training.length;
+  if (!total) {
+    box.innerHTML = '<div class="search-ai">No matches for <strong>'+q+'</strong></div>';
+    box.classList.add('active'); return;
+  }
+  const section = (title, icon, items, fmt) => items.length ? `
+    <div class="search-section">
+      <div class="search-section-title">${title} · ${items.length}</div>
+      ${items.slice(0,5).map(fmt(icon)).join('')}
+    </div>` : '';
+  box.innerHTML = `
+    <div class="search-ai" id="search-ai-box"><div class="ai-label">🤖 AI Summary</div><div id="search-ai-text">Summarizing…</div></div>
+    ${section('To-Do List','✅', matches.todo, ic => t => `<div class="search-item"><span class="search-item-icon">${ic}</span><div><div class="search-item-title">${t.task_title}</div><div class="search-item-meta">${t.priority||''} · ${t.assigned_person||'—'}</div></div></div>`)}
+    ${section('Product Specs','📋', matches.specs, ic => s => `<div class="search-item"><span class="search-item-icon">${ic}</span><div><div class="search-item-title">${s.product_name} <span class="search-item-meta">(${s.revision_number||'—'})</span></div><div class="search-item-meta">${s.summary||''}</div></div></div>`)}
+    ${section('Trial Reports','🧪', matches.trials, ic => r => `<div class="search-item"><span class="search-item-icon">${ic}</span><div><div class="search-item-title">${r.product_name}</div><div class="search-item-meta">${(r.ai_summary||r.notes||'').slice(0,80)}</div></div></div>`)}
+    ${section('Training','📅', matches.training, ic => t => `<div class="search-item"><span class="search-item-icon">${ic}</span><div><div class="search-item-title">${t.training_topic}</div><div class="search-item-meta">${t.employee_name||'—'} · ${t.status||''}</div></div></div>`)}
+  `;
+  box.classList.add('active');
+  // AI summarize (debounced)
+  clearTimeout(_searchTimer);
+  _searchTimer = setTimeout(async () => {
+    try {
+      const items = [
+        ...matches.todo.slice(0,5).map(t => ({type:'todo', title:t.task_title, detail:t.notes||''})),
+        ...matches.specs.slice(0,5).map(s => ({type:'spec', title:`${s.product_name} ${s.revision_number||''}`, detail:s.summary||''})),
+        ...matches.trials.slice(0,5).map(r => ({type:'trial', title:r.product_name, detail:r.ai_summary||r.notes||''})),
+        ...matches.training.slice(0,5).map(t => ({type:'training', title:t.training_topic, detail:t.employee_name||''}))
+      ];
+      const res = await fetch('/api/public/ai-summarize', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ mode:'search', query:q, items })
+      });
+      const data = await res.json();
+      const el = document.getElementById('search-ai-text');
+      if (el) el.textContent = data.summary || data.error || 'No summary';
+    } catch(e) {
+      const el = document.getElementById('search-ai-text');
+      if (el) el.textContent = 'AI summary unavailable: ' + e.message;
+    }
+  }, 400);
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('.topbar-search')) {
+    const box = document.getElementById('search-results');
+    if (box) box.classList.remove('active');
+  }
+});
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   NOTIFICATIONS PANEL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+async function toggleNotifPanel(force) {
+  const panel = document.getElementById('notif-panel');
+  const open = force === undefined ? !panel.classList.contains('active') : force;
+  panel.classList.toggle('active', open);
+  if (open) await renderNotifPanel();
+}
+async function renderNotifPanel() {
+  const body = document.getElementById('notif-body');
+  body.innerHTML = '<div class="notif-empty">Loading…</div>';
+  const [trainings, todosAll, specsAll] = await Promise.all([
+    dbGet('training_schedules'), dbGet('todos'), dbGet('product_specifications')
+  ]);
+  const me = currentUser;
+  const myTrainings = trainings.filter(t => t.employee_name === me);
+  const myTasks = todosAll.filter(t => t.assigned_person === me && !t.completion_status);
+  const recentSpecs = [...specsAll].sort((a,b) => new Date(b.last_updated_at||0) - new Date(a.last_updated_at||0)).slice(0, 5);
+  document.getElementById('notif-title').textContent = `${me}'s Notifications`;
+  document.getElementById('bell-dot').classList.toggle('active', myTasks.length>0 || myTrainings.some(t=>t.status!=='Completed'));
+  const html = [];
+  html.push('<div class="notif-group-title">📅 Training Schedule</div>');
+  if (!myTrainings.length) html.push('<div class="notif-empty" style="padding:10px 20px">No trainings assigned.</div>');
+  else myTrainings.forEach(t => html.push(`<div class="notif-item training"><div class="notif-item-title">${t.training_topic}</div><div class="notif-item-meta">${t.status||'Pending'} · Due ${fmtDate(t.due_date)} · Trainer: ${t.trainer||'—'}</div></div>`));
+  html.push('<div class="notif-group-title">✅ Assigned Tasks</div>');
+  if (!myTasks.length) html.push('<div class="notif-empty" style="padding:10px 20px">No open tasks 🎉</div>');
+  else myTasks.forEach(t => html.push(`<div class="notif-item task"><div class="notif-item-title">${t.task_title}</div><div class="notif-item-meta">${t.priority||'Medium'} · Due ${fmtDate(t.deadline)}</div></div>`));
+  html.push('<div class="notif-group-title">📢 Announcements — Product Spec Updates</div>');
+  if (!recentSpecs.length) html.push('<div class="notif-empty" style="padding:10px 20px">No recent updates.</div>');
+  else recentSpecs.forEach(s => html.push(`<div class="notif-item announce"><div class="notif-item-title">${s.product_name} — ${s.revision_number||''}</div><div class="notif-item-meta">${s.summary||'(no summary)'} · Updated ${fmtDate(s.last_updated_at)} by ${s.last_updated_by||'—'}</div></div>`));
+  body.innerHTML = html.join('');
+}
 
 function updateTopbarDate() {
   const now = new Date();
@@ -1620,9 +1953,7 @@ function renderTrainingTable() {
       <td class="td-muted">${fmtDate(t.reminder_date)}</td>
       <td>${statusBadge(t.status)}</td>
       <td class="td-muted">${t.last_updated_by||'—'}</td>
-      <td>
-        <div style="display:flex;gap:5px">
-          <button class="btn btn-secondary btn-sm" onclick="editTraining(${t.id})">✏️ Edit</button>
+      <td class="officer-only"><div style="display:flex;gap:5px"><button class="btn btn-secondary btn-sm" onclick="editTraining(${t.id})">✏️ Edit</button>
           <button class="btn btn-danger btn-sm" onclick="deleteTraining(${t.id})">🗑</button>
         </div>
       </td>
@@ -1734,9 +2065,7 @@ function renderTodoTable() {
         ${fmtDate(t.deadline)} ${overdue?'⚠️':''}
       </td>
       <td class="td-muted">${t.last_updated_by||'—'}</td>
-      <td>
-        <div style="display:flex;gap:5px">
-          <button class="btn btn-secondary btn-sm" onclick="editTodo(${t.id})">✏️</button>
+      <td class="officer-only"><div style="display:flex;gap:5px"><button class="btn btn-secondary btn-sm" onclick="editTodo(${t.id})">✏️</button>
           <button class="btn btn-danger btn-sm" onclick="deleteTodo(${t.id})">🗑</button>
         </div>
       </td>
@@ -1816,9 +2145,7 @@ function renderSpecsTable() {
     <td style="max-width:200px;font-size:0.78rem">${s.summary||'—'}</td>
     <td>${s.google_drive_link?`<a href="${s.google_drive_link}" target="_blank" class="drive-link">📁 Open File</a>`:'—'}</td>
     <td class="td-muted">${s.last_updated_by||'—'}</td>
-    <td>
-      <div style="display:flex;gap:5px">
-        <button class="btn btn-secondary btn-sm" onclick="editSpec(${s.id})">✏️</button>
+    <td class="officer-only"><div style="display:flex;gap:5px"><button class="btn btn-secondary btn-sm" onclick="editSpec(${s.id})">✏️</button>
         <button class="btn btn-danger btn-sm" onclick="deleteSpec(${s.id})">🗑</button>
       </div>
     </td>
@@ -1889,9 +2216,7 @@ function renderTrialsTable() {
     <td style="max-width:160px;font-size:0.78rem">${r.notes||'—'}</td>
     <td>${r.google_drive_link?`<a href="${r.google_drive_link}" target="_blank" class="drive-link">📁 Open</a>`:'—'}</td>
     <td class="td-muted">${r.last_updated_by||'—'}</td>
-    <td>
-      <div style="display:flex;gap:5px">
-        <button class="btn btn-secondary btn-sm" onclick="editTrial(${r.id})">✏️</button>
+    <td class="officer-only"><div style="display:flex;gap:5px"><button class="btn btn-secondary btn-sm" onclick="editTrial(${r.id})">✏️</button>
         <button class="btn btn-danger btn-sm" onclick="deleteTrial(${r.id})">🗑</button>
       </div>
     </td>
