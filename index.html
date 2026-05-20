@@ -879,6 +879,25 @@
     .notif-item-title { font-weight: 700; margin-bottom: 2px; }
     .notif-item-meta { font-size: 0.72rem; color: var(--text-muted); }
     .notif-empty { padding: 30px 20px; text-align: center; color: var(--text-muted); font-size: 0.85rem; }
+  /* ── MENTION CHIPS ─────────────────────────────────────────── */
+  .mention-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: var(--blue-100); color: var(--blue-800);
+    border: 1px solid var(--blue-300); border-radius: 20px;
+    padding: 3px 10px 3px 8px; font-size: 0.78rem; font-weight: 600;
+  }
+  .mention-chip .rm { cursor:pointer; opacity:0.6; font-size:0.85rem; line-height:1; }
+  .mention-chip .rm:hover { opacity:1; color:var(--red); }
+  .mention-dd-item {
+    padding: 9px 14px; cursor: pointer; font-size: 0.85rem;
+    display: flex; align-items: center; gap: 8px;
+    transition: background 0.12s;
+  }
+  .mention-dd-item:hover { background: var(--blue-50); }
+  .mention-highlight {
+    background: var(--blue-100); color: var(--blue-700);
+    border-radius: 3px; padding: 0 2px; font-weight: 700;
+  }
   /* ── SOP PAGE ──────────────────────────────────────────────── */
   .sop-grid {
     display: grid;
@@ -1065,26 +1084,11 @@
     </div>
   </div>
   <div class="profile-label" style="margin-top:36px">QC Field</div>
-  <div class="profile-grid">
-    <div class="profile-card" onclick="selectProfile('Rio','field','#f59e0b')">
-      <div class="profile-avatar" style="background:linear-gradient(135deg,#f59e0b,#fbbf24)">R</div>
-      <div class="profile-name">Rio</div>
-      <div class="profile-role">QC Field · view only</div>
-    </div>
-    <div class="profile-card" onclick="selectProfile('Syahdan','field','#14b8a6')">
-      <div class="profile-avatar" style="background:linear-gradient(135deg,#14b8a6,#5eead4)">S</div>
-      <div class="profile-name">Syahdan</div>
-      <div class="profile-role">QC Field · view only</div>
-    </div>
-    <div class="profile-card" onclick="selectProfile('Gerrie','field','#a855f7')">
-      <div class="profile-avatar" style="background:linear-gradient(135deg,#a855f7,#c084fc)">G</div>
-      <div class="profile-name">Gerrie</div>
-      <div class="profile-role">QC Field · view only</div>
-    </div>
-    <div class="profile-card" onclick="selectProfile('Putri','field','#ef4444')">
-      <div class="profile-avatar" style="background:linear-gradient(135deg,#ef4444,#fca5a5)">P</div>
-      <div class="profile-name">Putri</div>
-      <div class="profile-role">QC Field · view only</div>
+  <div class="profile-grid" style="justify-content:center">
+    <div class="profile-card" onclick="selectProfile('QC Field','field','#64748b')">
+      <div class="profile-avatar" style="background:linear-gradient(135deg,#64748b,#94a3b8)">👷</div>
+      <div class="profile-name">QC Field</div>
+      <div class="profile-role">View only access</div>
     </div>
   </div>
 </div>
@@ -1140,7 +1144,7 @@
       <div class="nav-item" onclick="showPage('specs',this)">
         <span class="nav-icon">📋</span> Product Specs
       </div>
-      <div class="nav-item" onclick="showPage('trials',this)">
+      <div class="nav-item officer-only" onclick="showPage('trials',this)">
         <span class="nav-icon">🧪</span> Trial Reports
       </div>
       <div class="nav-item" onclick="showPage('sop',this)">
@@ -1234,20 +1238,14 @@
           </div>
         </div>
 
-        <!-- Todos + Specs -->
-        <div class="dash-grid">
-          <div class="card">
-            <div class="card-title">⚡ Urgent To-Dos</div>
-            <div id="dash-todos"><div class="loading"><div class="spinner"></div></div></div>
-          </div>
-          <div class="card">
-            <div class="card-title">📋 Recently Updated Specs</div>
-            <div id="dash-specs"><div class="loading"><div class="spinner"></div></div></div>
-          </div>
+        <!-- Todos (full width) -->
+        <div class="card">
+          <div class="card-title">⚡ Urgent To-Dos</div>
+          <div id="dash-todos"><div class="loading"><div class="spinner"></div></div></div>
         </div>
 
-        <!-- Trial Reports -->
-        <div class="card">
+        <!-- Trial Reports (officer only) -->
+        <div class="card officer-only" id="dash-trials-card">
           <div class="card-title">🧪 Latest Trial Reports</div>
           <div id="dash-trials"><div class="loading"><div class="spinner"></div></div></div>
         </div>
@@ -1530,6 +1528,14 @@
       <label class="form-label">Notes</label>
       <textarea class="form-input form-textarea" id="td-notes" placeholder="Additional notes..."></textarea>
     </div>
+    <div class="form-group">
+      <label class="form-label">Mention QC Field <span style="font-weight:400;color:var(--text-muted)">(optional — they'll see this in their notifications)</span></label>
+      <div style="position:relative">
+        <input class="form-input" id="td-mention" placeholder="e.g. Rio, Syahdan" autocomplete="off" oninput="onMentionInput(this)">
+        <div id="mention-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1.5px solid var(--blue-300);border-radius:8px;box-shadow:var(--shadow-lg);z-index:200;overflow:hidden"></div>
+      </div>
+      <div id="mention-tags" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px"></div>
+    </div>
     <div class="form-actions">
       <button class="btn btn-secondary" onclick="closeModal('todo')">Cancel</button>
       <button class="btn btn-primary" onclick="saveTodo()">Save Task</button>
@@ -1740,11 +1746,11 @@ function seedDemoData() {
 const OFFICER_PASSWORD = 'kitakerenbangetcoyy';
 const profileColors = {
   'Nashir':'#2563eb','Gina':'#7c3aed','Lussy':'#0891b2','Bianca':'#059669',
-  'Rio':'#f59e0b','Syahdan':'#14b8a6','Gerrie':'#a855f7','Putri':'#ef4444'
+  'QC Field':'#64748b'
 };
 const profileRoles = {
   'Nashir':'officer','Gina':'officer','Lussy':'officer','Bianca':'officer',
-  'Rio':'field','Syahdan':'field','Gerrie':'field','Putri':'field'
+  'QC Field':'field'
 };
 let currentRole = null;
 let pendingProfile = null;
@@ -1795,7 +1801,7 @@ function enterApp(name, role, color) {
 
 function updateSidebarUser(name, color, role) {
   document.getElementById('sb-name').textContent = name;
-  document.getElementById('sb-avatar').textContent = name[0];
+  document.getElementById('sb-avatar').textContent = role === 'field' ? '👷' : name[0];
   document.getElementById('sb-avatar').style.background = color || profileColors[name] || '#2563eb';
   document.getElementById('sb-role').textContent = role === 'field' ? 'QC Field · view only' : 'QC Officer';
   const w = document.getElementById('dash-welcome');
@@ -1927,21 +1933,38 @@ async function renderNotifPanel() {
     dbGet('training_schedules'), dbGet('todos'), dbGet('product_specifications')
   ]);
   const me = currentUser;
-  const myTrainings = trainings.filter(t => t.employee_name === me);
-  const myTasks = todosAll.filter(t => t.assigned_person === me && !t.completion_status);
+  const isField = currentRole === 'field';
+
+  // For field: show all todos that mention 'QC Field'
+  // For officer: show assigned to me
+  const myTasks = isField
+    ? todosAll.filter(t => !t.completion_status && (t.mentions||'').toLowerCase().includes('qc field'))
+    : todosAll.filter(t => t.assigned_person === me && !t.completion_status);
+  const myTrainings = isField ? [] : trainings.filter(t => t.employee_name === me);
   const recentSpecs = [...specsAll].sort((a,b) => new Date(b.last_updated_at||0) - new Date(a.last_updated_at||0)).slice(0, 5);
+
   document.getElementById('notif-title').textContent = `${me}'s Notifications`;
-  document.getElementById('bell-dot').classList.toggle('active', myTasks.length>0 || myTrainings.some(t=>t.status!=='Completed'));
+  document.getElementById('bell-dot').classList.toggle('active', myTasks.length > 0 || myTrainings.some(t=>t.status!=='Completed'));
   const html = [];
-  html.push('<div class="notif-group-title">📅 Training Schedule</div>');
-  if (!myTrainings.length) html.push('<div class="notif-empty" style="padding:10px 20px">No trainings assigned.</div>');
-  else myTrainings.forEach(t => html.push(`<div class="notif-item training"><div class="notif-item-title">${t.training_topic}</div><div class="notif-item-meta">${t.status||'Pending'} · Due ${fmtDate(t.due_date)} · Trainer: ${t.trainer||'—'}</div></div>`));
-  html.push('<div class="notif-group-title">✅ Assigned Tasks</div>');
+
+  if (!isField) {
+    html.push('<div class="notif-group-title">📅 Training Schedule</div>');
+    if (!myTrainings.length) html.push('<div class="notif-empty" style="padding:10px 20px">No trainings assigned.</div>');
+    else myTrainings.forEach(t => html.push(`<div class="notif-item training"><div class="notif-item-title">${t.training_topic}</div><div class="notif-item-meta">${t.status||'Pending'} · Due ${fmtDate(t.due_date)} · Trainer: ${t.trainer||'—'}</div></div>`));
+  }
+
+  html.push('<div class="notif-group-title">✅ ' + (isField ? 'Tasks for QC Field' : 'Assigned Tasks') + '</div>');
   if (!myTasks.length) html.push('<div class="notif-empty" style="padding:10px 20px">No open tasks 🎉</div>');
-  else myTasks.forEach(t => html.push(`<div class="notif-item task"><div class="notif-item-title">${t.task_title}</div><div class="notif-item-meta">${t.priority||'Medium'} · Due ${fmtDate(t.deadline)}</div></div>`));
-  html.push('<div class="notif-group-title">📢 Announcements — Product Spec Updates</div>');
+  else myTasks.forEach(t => {
+    const mentionParts = (t.mentions||'').split(',').map(m=>m.trim()).filter(Boolean);
+    const mentionHtml = mentionParts.length ? `<span style="color:var(--blue-700);font-weight:600"> ${mentionParts.map(m=>'@'+m).join(' ')}</span>` : '';
+    html.push(`<div class="notif-item task"><div class="notif-item-title">${t.task_title}${mentionHtml}</div><div class="notif-item-meta">${t.priority||'Medium'} · Due ${fmtDate(t.deadline)} · By ${t.last_updated_by||'—'}</div></div>`);
+  });
+
+  html.push('<div class="notif-group-title">📢 Product Spec Updates</div>');
   if (!recentSpecs.length) html.push('<div class="notif-empty" style="padding:10px 20px">No recent updates.</div>');
   else recentSpecs.forEach(s => html.push(`<div class="notif-item announce"><div class="notif-item-title">${s.product_name} — ${s.revision_number||''}</div><div class="notif-item-meta">${s.summary||'(no summary)'} · Updated ${fmtDate(s.last_updated_at)} by ${s.last_updated_by||'—'}</div></div>`));
+
   body.innerHTML = html.join('');
 }
 
@@ -2059,14 +2082,17 @@ async function loadDashboard() {
     const diff = Math.round((new Date(t.reminder_date)-today)/(1000*60*60*24));
     if (diff <= 3) alerts.push({ type:'info', text:`Training reminder: ${t.employee_name}`, sub:`${t.training_topic} — in ${diff} day(s)` });
   });
+  // Recently updated specs in notification center
+  const recentSpecs5 = [...specs].sort((a,b)=>new Date(b.last_updated_at||0)-new Date(a.last_updated_at||0)).slice(0,5);
+  recentSpecs5.forEach(s => alerts.push({ type:'spec', text:`📋 Spec Updated: ${s.product_name} ${s.revision_number||''}`, sub:`${s.summary||'(no summary)'} · by ${s.last_updated_by||'—'} on ${fmtDate(s.last_updated_at)}` }));
 
   const alertsEl = document.getElementById('dash-alerts');
   if (!alerts.length) {
     alertsEl.innerHTML = `<div class="empty-state" style="padding:24px"><div class="empty-icon">🎉</div><p>All clear! No urgent alerts.</p></div>`;
   } else {
-    alertsEl.innerHTML = alerts.slice(0,6).map(a => `
-      <div class="alert-item ${a.type}">
-        <div class="alert-dot ${a.type}"></div>
+    alertsEl.innerHTML = alerts.map(a => `
+      <div class="alert-item ${a.type === 'spec' ? 'info' : a.type}">
+        <div class="alert-dot ${a.type === 'spec' ? 'info' : a.type}"></div>
         <div><div class="alert-text">${a.text}</div><div class="alert-sub">${a.sub}</div></div>
       </div>`).join('');
   }
@@ -2089,15 +2115,7 @@ async function loadDashboard() {
       <div class="recent-meta">${priorityBadge(t.priority)} ${t.assigned_person ? '· '+t.assigned_person:''} · Due: ${fmtDate(t.deadline)}</div></div></div>`).join('') :
     `<div class="empty-state" style="padding:24px"><p>No urgent tasks 🎉</p></div>`;
 
-  // Recent specs
-  document.getElementById('dash-specs').innerHTML = specs.slice(0,4).map(s=>`<div class="recent-item">
-    <div class="recent-dot" style="background:var(--teal)"></div>
-    <div style="flex:1"><div class="recent-text">${s.product_name} <span class="td-muted">${s.revision_number||''}</span></div>
-    <div class="recent-meta">Updated by ${s.last_updated_by||'—'}</div></div>
-    ${s.google_drive_link?`<a href="${s.google_drive_link}" target="_blank" class="drive-link">📁 Open</a>`:''}</div>`).join('') ||
-    `<div class="empty-state" style="padding:24px"><p>No specifications yet</p></div>`;
-
-  // Trials table
+  // Trials table (officer only)
   document.getElementById('dash-trials').innerHTML = trials.length ? `<div class="table-wrap"><table>
     <thead><tr><th>Product</th><th>Date</th><th>Assigned</th><th>AI Summary</th><th>Updated By</th></tr></thead>
     <tbody>${trials.slice(0,4).map(r=>`<tr>
@@ -2169,7 +2187,7 @@ function closeModal(type) {
   document.getElementById('modal-'+type).classList.remove('open');
   // Reset form
   if (type==='training') { ['t-id','t-employee','t-trainer','t-topic','t-due','t-reminder','t-notes'].forEach(id => { const el=document.getElementById(id); el.value=''; }); document.getElementById('t-status').value='Pending'; document.getElementById('modal-training-title').textContent='Add Training'; }
-  if (type==='todo') { ['td-id','td-title','td-priority','td-assigned','td-deadline','td-notes'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; }); document.getElementById('modal-todo-title').textContent='Add Task'; }
+  if (type==='todo') { ['td-id','td-title','td-priority','td-assigned','td-deadline','td-notes'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; }); document.getElementById('modal-todo-title').textContent='Add Task'; clearMentions(); }
   if (type==='specs') { ['sp-id','sp-product','sp-revision','sp-date','sp-approved','sp-link','sp-summary'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; }); document.getElementById('modal-specs-title').textContent='Add Specification'; }
   if (type==='trials') { ['tr-id','tr-product','tr-date','tr-assigned','tr-link','tr-notes'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; }); document.getElementById('tr-ai-area').style.display='none'; document.getElementById('modal-trials-title').textContent='Add Trial Report'; }
 }
@@ -2259,6 +2277,7 @@ function renderTodoTable() {
       <td>
         <span style="${t.completion_status?'text-decoration:line-through':''}">${t.task_title}</span>
         ${t.notes?`<div class="td-muted" style="margin-top:2px;font-size:0.72rem">${t.notes.slice(0,60)}</div>`:''}
+        ${t.mentions ? t.mentions.split(',').map(m=>m.trim()).filter(Boolean).map(m=>`<span class="mention-chip" style="margin-top:4px;font-size:0.68rem">@${m}</span>`).join(' ') : ''}
       </td>
       <td>${priorityBadge(t.priority)}</td>
       <td>${t.assigned_person||'—'}</td>
@@ -2290,6 +2309,7 @@ async function saveTodo() {
     assigned_person: document.getElementById('td-assigned').value,
     deadline: document.getElementById('td-deadline').value || null,
     notes: document.getElementById('td-notes').value,
+    mentions: currentMentions.join(', '),
     completion_status: false,
     last_updated_by: currentUser,
     last_updated_at: new Date().toISOString()
@@ -2297,6 +2317,7 @@ async function saveTodo() {
   if (!row.task_title) { showToast('Task title is required', 'error'); return; }
   if (id) { await dbUpdate('todos', parseInt(id), row); showToast('Task updated!','success'); }
   else { await dbInsert('todos', row); showToast('Task added!','success'); }
+  clearMentions();
   closeModal('todo'); loadTodoPage(); loadDashboard();
 }
 
@@ -2309,6 +2330,9 @@ function editTodo(id) {
   document.getElementById('td-assigned').value = t.assigned_person||'';
   document.getElementById('td-deadline').value = t.deadline||'';
   document.getElementById('td-notes').value = t.notes||'';
+  // Load mentions
+  currentMentions = (t.mentions||'').split(',').map(m=>m.trim()).filter(Boolean);
+  renderMentionTags();
   document.getElementById('modal-todo-title').textContent = 'Edit Task';
   openModal('todo');
 }
@@ -2501,6 +2525,68 @@ async function deleteTrial(id) {
   await dbDelete('trial_reports', id); showToast('Deleted!','success');
   loadTrialsPage(); loadDashboard();
 }
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   MENTION SYSTEM
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+// All people who can be mentioned (field user + officers for cross-mention)
+const ALL_MENTIONABLE = ['QC Field','Nashir','Gina','Lussy','Bianca'];
+let currentMentions = [];
+
+function onMentionInput(input) {
+  const val = input.value.trim().toLowerCase();
+  const dd = document.getElementById('mention-dropdown');
+  if (!val) { dd.style.display = 'none'; return; }
+  const filtered = ALL_MENTIONABLE.filter(n =>
+    n.toLowerCase().includes(val) && !currentMentions.includes(n)
+  );
+  if (!filtered.length) { dd.style.display = 'none'; return; }
+  dd.innerHTML = filtered.map(n => `
+    <div class="mention-dd-item" onclick="addMention('${n}')">
+      <span style="font-size:0.9rem">👤</span>
+      <span>${n.replace(new RegExp(val,'gi'), m=>`<span class="mention-highlight">${m}</span>`)}</span>
+    </div>`).join('');
+  dd.style.display = 'block';
+}
+
+function addMention(name) {
+  if (!currentMentions.includes(name)) {
+    currentMentions.push(name);
+    renderMentionTags();
+  }
+  document.getElementById('td-mention').value = '';
+  document.getElementById('mention-dropdown').style.display = 'none';
+}
+
+function removeMention(name) {
+  currentMentions = currentMentions.filter(m => m !== name);
+  renderMentionTags();
+}
+
+function renderMentionTags() {
+  const box = document.getElementById('mention-tags');
+  box.innerHTML = currentMentions.map(m => `
+    <span class="mention-chip">@${m}<span class="rm" onclick="removeMention('${m}')">✕</span></span>
+  `).join('');
+}
+
+function clearMentions() {
+  currentMentions = [];
+  const tags = document.getElementById('mention-tags');
+  if (tags) tags.innerHTML = '';
+  const inp = document.getElementById('td-mention');
+  if (inp) inp.value = '';
+  const dd = document.getElementById('mention-dropdown');
+  if (dd) dd.style.display = 'none';
+}
+
+// Close mention dropdown on outside click
+document.addEventListener('click', e => {
+  if (!e.target.closest('#td-mention') && !e.target.closest('#mention-dropdown')) {
+    const dd = document.getElementById('mention-dropdown');
+    if (dd) dd.style.display = 'none';
+  }
+});
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    MOBILE SIDEBAR
