@@ -994,6 +994,7 @@
     /* Topbar */
     .topbar { padding: 0 16px; gap: 10px; }
     .topbar-search { display: none; }
+    .announce-btn-label { display: none; }
     .hamburger { display: flex; align-items: center; }
     .topbar-date { display: none; }
 
@@ -1166,6 +1167,7 @@
         <div id="search-results" class="search-results"></div>
       </div>
       <div class="topbar-right">
+        <button class="btn btn-primary btn-sm officer-only" onclick="openAnnounceModal()" title="Post announcement" style="display:inline-flex;align-items:center;gap:6px">📢 <span class="announce-btn-label">Announce</span></button>
         <button class="bell-btn" onclick="toggleNotifPanel()" title="Notifications">
           🔔<span id="bell-dot" class="bell-dot"></span>
         </button>
@@ -1655,6 +1657,31 @@
   </div>
 </div>
 
+<!-- Announcement Modal -->
+<div class="modal-overlay" id="modal-announce">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">📢 Post Announcement</div>
+      <div class="modal-close" onclick="closeModal('announce')">✕</div>
+    </div>
+    <div style="font-size:0.82rem;color:var(--text-muted);margin-bottom:10px">
+      This message will appear in the Notification Center for every QC Officer and QC Field user, and will be searchable from the top bar.
+    </div>
+    <div class="form-group">
+      <label class="form-label">Title *</label>
+      <input class="form-input" id="an-title" placeholder="e.g. Audit on Friday — please prepare batch records" maxlength="120">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Message *</label>
+      <textarea class="form-input form-textarea" id="an-message" placeholder="Write the announcement details here..." rows="5"></textarea>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="closeModal('announce')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveAnnouncement()">📢 Post Announcement</button>
+    </div>
+  </div>
+</div>
+
 <!-- Toast Container -->
 <div id="toast-container"></div>
 
@@ -1684,7 +1711,8 @@ let demoData = {
   todos: [],
   product_specifications: [],
   trial_reports: [],
-  sop_documents: []
+  sop_documents: [],
+  announcements: []
 };
 
 function initSupabase() {
@@ -1736,6 +1764,9 @@ function seedDemoData() {
   ];
   demoData.trial_reports = [
     { id: 1, product_name:'Product C', trial_date: addDays(today,-3), assigned_person:'Syahdan', google_drive_link:'https://drive.google.com', ai_summary:'Trial completed successfully. Texture and color meet specifications. pH within acceptable range (4.2–4.6). Recommend approval.', notes:'Small batch trial — 50kg', last_updated_by:'Lussy', last_updated_at:now },
+  ];
+  demoData.announcements = [
+    { id: 1, title:'Welcome to QCBoard 📢', message:'Use this Announcement feature to broadcast important updates to all QC Officers and QC Field staff. Posts appear in everyone\'s Notification Center and are searchable from the top bar.', posted_by:'Nashir', posted_at: now, last_updated_by:'Nashir', last_updated_at: now },
   ];
   saveDemoData();
 }
@@ -1859,17 +1890,18 @@ async function onGlobalSearch() {
   const q = document.getElementById('global-search').value.trim().toLowerCase();
   const box = document.getElementById('search-results');
   if (!q) { box.classList.remove('active'); box.innerHTML = ''; return; }
-  const [trainings, todosAll, specsAll, trialsAll] = await Promise.all([
+  const [trainings, todosAll, specsAll, trialsAll, announcementsAll] = await Promise.all([
     dbGet('training_schedules'), dbGet('todos'),
-    dbGet('product_specifications'), dbGet('trial_reports')
+    dbGet('product_specifications'), dbGet('trial_reports'), dbGet('announcements')
   ]);
   const matches = {
+    announce: announcementsAll.filter(a => ((a.title||'')+' '+(a.message||'')+' '+(a.posted_by||'')).toLowerCase().includes(q)),
     todo: todosAll.filter(t => (t.task_title+' '+(t.notes||'')+' '+(t.assigned_person||'')).toLowerCase().includes(q)),
     specs: specsAll.filter(s => (s.product_name+' '+(s.summary||'')+' '+(s.revision_number||'')).toLowerCase().includes(q)),
     trials: trialsAll.filter(r => (r.product_name+' '+(r.notes||'')+' '+(r.ai_summary||'')).toLowerCase().includes(q)),
     training: trainings.filter(t => (t.training_topic+' '+(t.employee_name||'')+' '+(t.trainer||'')).toLowerCase().includes(q))
   };
-  const total = matches.todo.length + matches.specs.length + matches.trials.length + matches.training.length;
+  const total = matches.announce.length + matches.todo.length + matches.specs.length + matches.trials.length + matches.training.length;
   if (!total) {
     box.innerHTML = '<div class="search-ai">No matches for <strong>'+q+'</strong></div>';
     box.classList.add('active'); return;
@@ -1881,6 +1913,7 @@ async function onGlobalSearch() {
     </div>` : '';
   box.innerHTML = `
     <div class="search-ai" id="search-ai-box"><div class="ai-label">🤖 AI Summary</div><div id="search-ai-text">Summarizing…</div></div>
+    ${section('Announcements','📢', matches.announce, ic => a => `<div class="search-item"><span class="search-item-icon">${ic}</span><div><div class="search-item-title">${a.title||'(untitled)'}</div><div class="search-item-meta">${(a.message||'').slice(0,80)} · by ${a.posted_by||'—'}</div></div></div>`)}
     ${section('To-Do List','✅', matches.todo, ic => t => `<div class="search-item"><span class="search-item-icon">${ic}</span><div><div class="search-item-title">${t.task_title}</div><div class="search-item-meta">${t.priority||''} · ${t.assigned_person||'—'}</div></div></div>`)}
     ${section('Product Specs','📋', matches.specs, ic => s => `<div class="search-item"><span class="search-item-icon">${ic}</span><div><div class="search-item-title">${s.product_name} <span class="search-item-meta">(${s.revision_number||'—'})</span></div><div class="search-item-meta">${s.summary||''}</div></div></div>`)}
     ${section('Trial Reports','🧪', matches.trials, ic => r => `<div class="search-item"><span class="search-item-icon">${ic}</span><div><div class="search-item-title">${r.product_name}</div><div class="search-item-meta">${(r.ai_summary||r.notes||'').slice(0,80)}</div></div></div>`)}
@@ -1929,8 +1962,8 @@ async function toggleNotifPanel(force) {
 async function renderNotifPanel() {
   const body = document.getElementById('notif-body');
   body.innerHTML = '<div class="notif-empty">Loading…</div>';
-  const [trainings, todosAll, specsAll] = await Promise.all([
-    dbGet('training_schedules'), dbGet('todos'), dbGet('product_specifications')
+  const [trainings, todosAll, specsAll, announcementsAll] = await Promise.all([
+    dbGet('training_schedules'), dbGet('todos'), dbGet('product_specifications'), dbGet('announcements')
   ]);
   const me = currentUser;
   const isField = currentRole === 'field';
@@ -1942,10 +1975,28 @@ async function renderNotifPanel() {
     : todosAll.filter(t => t.assigned_person === me && !t.completion_status);
   const myTrainings = isField ? [] : trainings.filter(t => t.employee_name === me);
   const recentSpecs = [...specsAll].sort((a,b) => new Date(b.last_updated_at||0) - new Date(a.last_updated_at||0)).slice(0, 5);
+  const recentAnnouncements = [...announcementsAll].sort((a,b) => new Date(b.posted_at||b.last_updated_at||0) - new Date(a.posted_at||a.last_updated_at||0));
+
+  // Unread announcement tracking (per user, via localStorage)
+  const seenKey = `qcboard_announce_seen_${me||'anon'}`;
+  const lastSeen = parseInt(localStorage.getItem(seenKey) || '0', 10);
+  const unreadAnnounce = recentAnnouncements.filter(a => new Date(a.posted_at||a.last_updated_at||0).getTime() > lastSeen).length;
 
   document.getElementById('notif-title').textContent = `${me}'s Notifications`;
-  document.getElementById('bell-dot').classList.toggle('active', myTasks.length > 0 || myTrainings.some(t=>t.status!=='Completed'));
+  document.getElementById('bell-dot').classList.toggle('active', myTasks.length > 0 || myTrainings.some(t=>t.status!=='Completed') || unreadAnnounce > 0);
+  // Mark as seen now that the panel is open
+  if (recentAnnouncements.length) {
+    localStorage.setItem(seenKey, String(Date.now()));
+  }
   const html = [];
+
+  // Announcements first — everyone sees these
+  html.push('<div class="notif-group-title">📢 Announcements' + (unreadAnnounce ? ` · <span style="color:var(--green)">${unreadAnnounce} new</span>` : '') + '</div>');
+  if (!recentAnnouncements.length) html.push('<div class="notif-empty" style="padding:10px 20px">No announcements yet.</div>');
+  else recentAnnouncements.slice(0, 20).forEach(a => {
+    const safeMsg = (a.message||'').replace(/</g,'&lt;');
+    html.push(`<div class="notif-item announce"><div class="notif-item-title">${a.title||'(untitled)'}</div><div style="font-size:0.8rem;color:var(--text);margin:3px 0 4px;white-space:pre-wrap">${safeMsg}</div><div class="notif-item-meta">Posted by ${a.posted_by||a.last_updated_by||'—'} · ${fmtDate(a.posted_at||a.last_updated_at)}</div></div>`);
+  });
 
   if (!isField) {
     html.push('<div class="notif-group-title">📅 Training Schedule</div>');
@@ -2010,6 +2061,7 @@ async function dbGet(table) {
 
 async function dbInsert(table, row) {
   if (DEMO_MODE) {
+    if (!demoData[table]) demoData[table] = [];
     const newId = (demoData[table].length ? Math.max(...demoData[table].map(r=>r.id))+1 : 1);
     demoData[table].push({ id: newId, ...row });
     saveDemoData();
@@ -2190,6 +2242,39 @@ function closeModal(type) {
   if (type==='todo') { ['td-id','td-title','td-priority','td-assigned','td-deadline','td-notes'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; }); document.getElementById('modal-todo-title').textContent='Add Task'; clearMentions(); }
   if (type==='specs') { ['sp-id','sp-product','sp-revision','sp-date','sp-approved','sp-link','sp-summary'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; }); document.getElementById('modal-specs-title').textContent='Add Specification'; }
   if (type==='trials') { ['tr-id','tr-product','tr-date','tr-assigned','tr-link','tr-notes'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; }); document.getElementById('tr-ai-area').style.display='none'; document.getElementById('modal-trials-title').textContent='Add Trial Report'; }
+  if (type==='announce') { ['an-title','an-message'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; }); }
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   ANNOUNCEMENTS  (officers post · everyone reads in Notification Center & search)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function openAnnounceModal() {
+  if (currentRole !== 'officer') { showToast('Only QC Officers can post announcements', 'error'); return; }
+  openModal('announce');
+  setTimeout(() => { const el = document.getElementById('an-title'); if (el) el.focus(); }, 50);
+}
+
+async function saveAnnouncement() {
+  if (currentRole !== 'officer') { showToast('Only QC Officers can post announcements', 'error'); return; }
+  const title = document.getElementById('an-title').value.trim();
+  const message = document.getElementById('an-message').value.trim();
+  if (!title || !message) { showToast('Title and message are required', 'error'); return; }
+  const now = new Date().toISOString();
+  const row = {
+    title, message,
+    posted_by: currentUser,
+    posted_at: now,
+    last_updated_by: currentUser,
+    last_updated_at: now
+  };
+  const saved = await dbInsert('announcements', row);
+  if (saved) {
+    showToast('📢 Announcement posted to everyone!', 'success');
+    closeModal('announce');
+    // Refresh anything that surfaces announcements
+    renderNotifPanel();
+    document.getElementById('bell-dot').classList.add('active');
+  }
 }
 
 async function saveTraining() {
