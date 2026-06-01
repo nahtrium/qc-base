@@ -898,6 +898,71 @@
     background: var(--blue-100); color: var(--blue-700);
     border-radius: 3px; padding: 0 2px; font-weight: 700;
   }
+  /* ── ANNOUNCEMENTS PAGE ────────────────────────────────────── */
+  .ann-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-left: 4px solid var(--green);
+    border-radius: var(--radius);
+    padding: 20px 22px 16px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow);
+    transition: box-shadow 0.15s;
+  }
+  .ann-card:hover { box-shadow: var(--shadow-lg); }
+  .ann-card.unread { border-left-color: #059669; background: #f0fdf4; }
+  .ann-card-header {
+    display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px;
+  }
+  .ann-card-avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--green), #34d399);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem; font-weight: 800; color: #fff; flex-shrink: 0;
+  }
+  .ann-card-meta { flex: 1; }
+  .ann-card-poster { font-weight: 700; font-size: 0.88rem; color: var(--text); }
+  .ann-card-date { font-size: 0.72rem; color: var(--text-muted); margin-top: 1px; }
+  .ann-card-actions-officer {
+    display: flex; gap: 6px; margin-left: auto; flex-shrink: 0;
+  }
+  .ann-action-btn {
+    background: transparent; border: 1px solid var(--border);
+    border-radius: 7px; padding: 5px 10px;
+    font-size: 0.75rem; color: var(--text-muted);
+    cursor: pointer; transition: all 0.15s;
+  }
+  .ann-action-btn:hover { background: var(--blue-50); color: var(--blue-700); border-color: var(--blue-200); }
+  .ann-action-btn.del:hover { background: #fef2f2; color: var(--red); border-color: #fca5a5; }
+  .ann-card-title {
+    font-size: 1.05rem; font-weight: 800; color: var(--text);
+    margin-bottom: 8px; line-height: 1.35;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .ann-card-body {
+    font-size: 0.88rem; color: var(--text); line-height: 1.7;
+    white-space: pre-wrap; margin-bottom: 14px;
+  }
+  .ann-card-footer {
+    display: flex; align-items: center; gap: 12px;
+    border-top: 1px solid var(--border); padding-top: 12px;
+  }
+  .ann-like-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: var(--blue-50); border: 1.5px solid var(--border);
+    border-radius: 20px; padding: 5px 14px;
+    font-size: 0.82rem; font-weight: 600; cursor: pointer;
+    transition: all 0.15s; color: var(--text-muted);
+    user-select: none;
+  }
+  .ann-like-btn:hover:not(:disabled) { background: #fef9c3; border-color: #fbbf24; color: #92400e; }
+  .ann-like-btn.liked { background: #fef9c3; border-color: #fbbf24; color: #92400e; }
+  .ann-like-btn:disabled { opacity: 0.5; cursor: default; }
+  .ann-like-count { font-size: 0.78rem; color: var(--text-muted); }
+  .ann-edited-tag {
+    font-size: 0.7rem; color: var(--text-muted); font-style: italic;
+  }
+
   /* ── SOP PAGE ──────────────────────────────────────────────── */
   .sop-grid {
     display: grid;
@@ -1133,6 +1198,10 @@
       <div class="nav-item active" onclick="showPage('dashboard',this)">
         <span class="nav-icon">🏠</span> Dashboard
       </div>
+      <div class="nav-item" onclick="showPage('announcements',this)" id="nav-announcements">
+        <span class="nav-icon">📢</span> Announcements
+        <span class="nav-badge" id="badge-announce" style="display:none">0</span>
+      </div>
       <div class="nav-section-label">Modules</div>
       <div class="nav-item" onclick="showPage('training',this)">
         <span class="nav-icon">📅</span> Training Schedule
@@ -1167,7 +1236,6 @@
         <div id="search-results" class="search-results"></div>
       </div>
       <div class="topbar-right">
-        <button class="btn btn-primary btn-sm officer-only" onclick="openAnnounceModal()" title="Post announcement" style="display:inline-flex;align-items:center;gap:6px">📢 <span class="announce-btn-label">Announce</span></button>
         <button class="bell-btn" onclick="toggleNotifPanel()" title="Notifications">
           🔔<span id="bell-dot" class="bell-dot"></span>
         </button>
@@ -1422,6 +1490,20 @@
           </div>
         </div>
       </div>
+      <!-- ── ANNOUNCEMENTS PAGE ────────────────────────────── -->
+      <div id="page-announcements" class="page">
+        <div class="page-header">
+          <div>
+            <h1>📢 Announcements</h1>
+            <p>Updates and notices from QC Officers</p>
+          </div>
+          <button class="btn btn-primary officer-only" onclick="openAnnounceModal()">+ New Announcement</button>
+        </div>
+        <div id="announce-list">
+          <div class="loading"><div class="spinner"></div></div>
+        </div>
+      </div>
+
       <!-- ── SOP PAGE ──────────────────────────────────────── -->
       <div id="page-sop" class="page">
         <div class="page-header">
@@ -1661,11 +1743,12 @@
 <div class="modal-overlay" id="modal-announce">
   <div class="modal">
     <div class="modal-header">
-      <div class="modal-title">📢 Post Announcement</div>
+      <div class="modal-title" id="modal-announce-title">📢 Post Announcement</div>
       <div class="modal-close" onclick="closeModal('announce')">✕</div>
     </div>
+    <input type="hidden" id="an-id">
     <div style="font-size:0.82rem;color:var(--text-muted);margin-bottom:10px">
-      This message will appear in the Notification Center for every QC Officer and QC Field user, and will be searchable from the top bar.
+      This message will appear in the Announcements page for every QC Officer and QC Field user, and will be searchable from the top bar.
     </div>
     <div class="form-group">
       <label class="form-label">Title *</label>
@@ -1677,7 +1760,7 @@
     </div>
     <div class="form-actions">
       <button class="btn btn-secondary" onclick="closeModal('announce')">Cancel</button>
-      <button class="btn btn-primary" onclick="saveAnnouncement()">📢 Post Announcement</button>
+      <button class="btn btn-primary" onclick="saveAnnouncement()">📢 Post</button>
     </div>
   </div>
 </div>
@@ -1766,7 +1849,7 @@ function seedDemoData() {
     { id: 1, product_name:'Product C', trial_date: addDays(today,-3), assigned_person:'Syahdan', google_drive_link:'https://drive.google.com', ai_summary:'Trial completed successfully. Texture and color meet specifications. pH within acceptable range (4.2–4.6). Recommend approval.', notes:'Small batch trial — 50kg', last_updated_by:'Lussy', last_updated_at:now },
   ];
   demoData.announcements = [
-    { id: 1, title:'Welcome to QCBoard 📢', message:'Use this Announcement feature to broadcast important updates to all QC Officers and QC Field staff. Posts appear in everyone\'s Notification Center and are searchable from the top bar.', posted_by:'Nashir', posted_at: now, last_updated_by:'Nashir', last_updated_at: now },
+    { id: 1, title:'Welcome to QCBoard 📢', message:'Use this Announcement feature to broadcast important updates to all QC Officers and QC Field staff. Posts appear in the Announcements page for everyone and are searchable from the top bar.', posted_by:'Nashir', posted_at: now, last_updated_by:'Nashir', last_updated_at: now, likes:'[]' },
   ];
   saveDemoData();
 }
@@ -1828,6 +1911,7 @@ function enterApp(name, role, color) {
   initSupabase();
   loadDashboard();
   updateTopbarDate();
+  setTimeout(updateAnnounceBadge, 800); // show unread badge after data loads
 }
 
 function updateSidebarUser(name, color, role) {
@@ -2031,7 +2115,8 @@ function updateTopbarDate() {
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 const pageNames = {
   dashboard:'Dashboard', training:'Training Schedule',
-  todo:'To-Do List', specs:'Product Specifications', trials:'Trial Reports'
+  todo:'To-Do List', specs:'Product Specifications', trials:'Trial Reports',
+  announcements:'Announcements', sop:'SOP'
 };
 
 function showPage(name, el) {
@@ -2040,12 +2125,12 @@ function showPage(name, el) {
   document.getElementById('page-'+name).classList.add('active');
   if (el) el.classList.add('active');
   document.getElementById('topbar-title').textContent = pageNames[name] || name;
-  // Load page data
   if (name === 'dashboard') loadDashboard();
   else if (name === 'training') loadTrainingPage();
   else if (name === 'todo') loadTodoPage();
   else if (name === 'specs') loadSpecsPage();
   else if (name === 'trials') loadTrialsPage();
+  else if (name === 'announcements') loadAnnouncementsPage();
   else if (name === 'sop') loadSOPPage();
 }
 
@@ -2246,35 +2331,210 @@ function closeModal(type) {
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   ANNOUNCEMENTS  (officers post · everyone reads in Notification Center & search)
+   ANNOUNCEMENTS PAGE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-function openAnnounceModal() {
+let _announcements = []; // page-level cache
+
+async function loadAnnouncementsPage() {
+  const list = document.getElementById('announce-list');
+  list.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  _announcements = await dbGet('announcements');
+
+  // Mark all as seen for this user
+  const seenKey = `qcboard_announce_seen_${currentUser||'anon'}`;
+  const lastSeen = parseInt(localStorage.getItem(seenKey) || '0', 10);
+
+  // Clear unread badge once page is opened
+  localStorage.setItem(seenKey, String(Date.now()));
+  document.getElementById('badge-announce').style.display = 'none';
+
+  if (!_announcements.length) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon">📢</div><p>No announcements yet${currentRole==='officer' ? ' — post the first one!' : '.'}</p></div>`;
+    return;
+  }
+
+  list.innerHTML = _announcements.map(a => renderAnnCard(a, lastSeen)).join('');
+}
+
+function renderAnnCard(a, lastSeen) {
+  const postedMs  = new Date(a.posted_at || a.last_updated_at || 0).getTime();
+  const isUnread  = postedMs > (lastSeen || 0);
+  const isEdited  = a.last_updated_at && a.last_updated_at !== a.posted_at;
+  const poster    = a.posted_by || a.last_updated_by || '?';
+  const avatarLetter = poster[0].toUpperCase();
+
+  // Likes: stored as JSON array of user tokens in the likes column
+  const likes     = safeParseArr(a.likes);
+  const likeKey   = `qcboard_like_${currentUser||'anon'}_${a.id}`;
+  // For field: count how many times this user liked (max 5)
+  // For officer: just show total
+  const myLikes   = parseInt(localStorage.getItem(likeKey) || '0', 10);
+  const totalLikes = likes.length;
+  const canLike   = currentRole === 'field' && myLikes < 5;
+  const liked     = myLikes > 0;
+
+  // Officer action buttons
+  const officerActions = currentRole === 'officer' ? `
+    <div class="ann-card-actions-officer">
+      <button class="ann-action-btn" onclick="editAnnouncement(${a.id})">✏️ Edit</button>
+      <button class="ann-action-btn del" onclick="deleteAnnouncement(${a.id})">🗑 Delete</button>
+    </div>` : '';
+
+  return `
+  <div class="ann-card${isUnread ? ' unread' : ''}" id="ann-card-${a.id}">
+    <div class="ann-card-header">
+      <div class="ann-card-avatar">${avatarLetter}</div>
+      <div class="ann-card-meta">
+        <div class="ann-card-poster">${escHtml(poster)}</div>
+        <div class="ann-card-date">${fmtDateTime(a.posted_at || a.last_updated_at)}${isEdited ? ` · <span class="ann-edited-tag">edited ${fmtDateTime(a.last_updated_at)}</span>` : ''}</div>
+      </div>
+      ${officerActions}
+    </div>
+    <div class="ann-card-title">
+      ${isUnread ? '<span class="unread-dot"></span>' : ''}
+      ${escHtml(a.title || '(untitled)')}
+    </div>
+    <div class="ann-card-body">${escHtml(a.message || '')}</div>
+    <div class="ann-card-footer">
+      <button class="ann-like-btn${liked ? ' liked' : ''}"
+        id="like-btn-${a.id}"
+        onclick="likeAnnouncement(${a.id})"
+        ${!canLike && currentRole === 'field' ? 'disabled' : ''}
+        ${currentRole === 'officer' ? 'disabled title="Officers can\'t like"' : ''}
+        title="${currentRole==='field' ? (canLike ? `You've liked ${myLikes}/5 times` : 'You\'ve used all 5 👍') : 'Only QC Field can react'}">
+        👍 <span id="like-count-${a.id}">${totalLikes}</span>
+      </button>
+      ${currentRole === 'field' ? `<span class="ann-like-count">${myLikes}/5 reacts used</span>` : ''}
+    </div>
+  </div>`;
+}
+
+function safeParseArr(val) {
+  if (!val) return [];
+  if (Array.isArray(val)) return val;
+  try { const p = JSON.parse(val); return Array.isArray(p) ? p : []; } catch { return []; }
+}
+
+async function likeAnnouncement(id) {
+  if (currentRole !== 'field') return;
+  const likeKey = `qcboard_like_${currentUser||'anon'}_${id}`;
+  const myLikes = parseInt(localStorage.getItem(likeKey) || '0', 10);
+  if (myLikes >= 5) { showToast('You\'ve used all 5 👍 for this announcement', 'warning'); return; }
+
+  // Fetch fresh record
+  const ann = _announcements.find(a => a.id === id);
+  if (!ann) return;
+  const likes = safeParseArr(ann.likes);
+
+  // Add a new like entry (using user+timestamp so duplicates are trackable)
+  likes.push(`${currentUser||'field'}_${Date.now()}`);
+
+  const ok = await dbUpdate('announcements', id, { likes: JSON.stringify(likes) });
+  if (ok) {
+    // Update local cache
+    ann.likes = JSON.stringify(likes);
+    const newMyLikes = myLikes + 1;
+    localStorage.setItem(likeKey, String(newMyLikes));
+
+    // Update UI without full reload
+    const countEl = document.getElementById(`like-count-${id}`);
+    if (countEl) countEl.textContent = likes.length;
+    const btn = document.getElementById(`like-btn-${id}`);
+    if (btn) {
+      btn.classList.add('liked');
+      if (newMyLikes >= 5) btn.disabled = true;
+      btn.title = `You've liked ${newMyLikes}/5 times`;
+    }
+    // Update react count label next to button
+    const card = document.getElementById(`ann-card-${id}`);
+    if (card) {
+      const countLabel = card.querySelector('.ann-like-count');
+      if (countLabel) countLabel.textContent = `${newMyLikes}/5 reacts used`;
+    }
+    showToast(`👍 +1 (${newMyLikes}/5)`, 'success');
+  }
+}
+
+function openAnnounceModal(editId) {
   if (currentRole !== 'officer') { showToast('Only QC Officers can post announcements', 'error'); return; }
+  document.getElementById('an-id').value = editId || '';
+  document.getElementById('an-title').value = '';
+  document.getElementById('an-message').value = '';
+  document.getElementById('modal-announce-title').textContent = editId ? '✏️ Edit Announcement' : '📢 New Announcement';
+
+  if (editId) {
+    const ann = _announcements.find(a => a.id === editId);
+    if (ann) {
+      document.getElementById('an-title').value = ann.title || '';
+      document.getElementById('an-message').value = ann.message || '';
+    }
+  }
   openModal('announce');
   setTimeout(() => { const el = document.getElementById('an-title'); if (el) el.focus(); }, 50);
 }
 
 async function saveAnnouncement() {
   if (currentRole !== 'officer') { showToast('Only QC Officers can post announcements', 'error'); return; }
-  const title = document.getElementById('an-title').value.trim();
+  const title   = document.getElementById('an-title').value.trim();
   const message = document.getElementById('an-message').value.trim();
+  const id      = document.getElementById('an-id').value;
   if (!title || !message) { showToast('Title and message are required', 'error'); return; }
   const now = new Date().toISOString();
-  const row = {
-    title, message,
-    posted_by: currentUser,
-    posted_at: now,
-    last_updated_by: currentUser,
-    last_updated_at: now
-  };
-  const saved = await dbInsert('announcements', row);
-  if (saved) {
-    showToast('📢 Announcement posted to everyone!', 'success');
-    closeModal('announce');
-    // Refresh anything that surfaces announcements
-    renderNotifPanel();
-    document.getElementById('bell-dot').classList.add('active');
+
+  if (id) {
+    // Edit existing
+    const ann = _announcements.find(a => String(a.id) === String(id));
+    const row = { title, message, last_updated_by: currentUser, last_updated_at: now };
+    const ok = await dbUpdate('announcements', parseInt(id), row);
+    if (ok) {
+      showToast('Announcement updated!', 'success');
+      closeModal('announce');
+      loadAnnouncementsPage();
+      updateAnnounceBadge();
+    }
+  } else {
+    // New
+    const row = { title, message, posted_by: currentUser, posted_at: now, last_updated_by: currentUser, last_updated_at: now, likes: '[]' };
+    const saved = await dbInsert('announcements', row);
+    if (saved) {
+      showToast('📢 Announcement posted!', 'success');
+      closeModal('announce');
+      loadAnnouncementsPage();
+      updateAnnounceBadge();
+    }
   }
+}
+
+function editAnnouncement(id) {
+  if (currentRole !== 'officer') return;
+  openAnnounceModal(id);
+}
+
+async function deleteAnnouncement(id) {
+  if (currentRole !== 'officer') return;
+  if (!confirm('Delete this announcement? This cannot be undone.')) return;
+  const ok = await dbDelete('announcements', id);
+  if (ok) {
+    showToast('Announcement deleted', 'success');
+    loadAnnouncementsPage();
+    updateAnnounceBadge();
+  }
+}
+
+async function updateAnnounceBadge() {
+  // Show unread count on nav badge
+  const seenKey = `qcboard_announce_seen_${currentUser||'anon'}`;
+  const lastSeen = parseInt(localStorage.getItem(seenKey) || '0', 10);
+  const rows = await dbGet('announcements');
+  const unread = rows.filter(a => new Date(a.posted_at||a.last_updated_at||0).getTime() > lastSeen).length;
+  const badge = document.getElementById('badge-announce');
+  if (badge) {
+    badge.textContent = unread;
+    badge.style.display = unread > 0 ? '' : 'none';
+  }
+  // Also refresh bell dot
+  const bellDot = document.getElementById('bell-dot');
+  if (bellDot) bellDot.classList.toggle('active', unread > 0);
 }
 
 async function saveTraining() {
@@ -2779,6 +3039,10 @@ async function saveSOP() {
   }
   document.getElementById('modal-sop').classList.remove('active');
   loadSOPPage();
+}
+
+function escHtml(str) {
+  return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 function fmtDateTime(d) {
