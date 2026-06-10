@@ -898,71 +898,6 @@
     background: var(--blue-100); color: var(--blue-700);
     border-radius: 3px; padding: 0 2px; font-weight: 700;
   }
-  /* ── ANNOUNCEMENTS PAGE ────────────────────────────────────── */
-  .ann-card {
-    background: var(--surface);
-    border: 1.5px solid var(--border);
-    border-left: 4px solid var(--green);
-    border-radius: var(--radius);
-    padding: 20px 22px 16px;
-    margin-bottom: 16px;
-    box-shadow: var(--shadow);
-    transition: box-shadow 0.15s;
-  }
-  .ann-card:hover { box-shadow: var(--shadow-lg); }
-  .ann-card.unread { border-left-color: #059669; background: #f0fdf4; }
-  .ann-card-header {
-    display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px;
-  }
-  .ann-card-avatar {
-    width: 36px; height: 36px; border-radius: 50%;
-    background: linear-gradient(135deg, var(--green), #34d399);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1rem; font-weight: 800; color: #fff; flex-shrink: 0;
-  }
-  .ann-card-meta { flex: 1; }
-  .ann-card-poster { font-weight: 700; font-size: 0.88rem; color: var(--text); }
-  .ann-card-date { font-size: 0.72rem; color: var(--text-muted); margin-top: 1px; }
-  .ann-card-actions-officer {
-    display: flex; gap: 6px; margin-left: auto; flex-shrink: 0;
-  }
-  .ann-action-btn {
-    background: transparent; border: 1px solid var(--border);
-    border-radius: 7px; padding: 5px 10px;
-    font-size: 0.75rem; color: var(--text-muted);
-    cursor: pointer; transition: all 0.15s;
-  }
-  .ann-action-btn:hover { background: var(--blue-50); color: var(--blue-700); border-color: var(--blue-200); }
-  .ann-action-btn.del:hover { background: #fef2f2; color: var(--red); border-color: #fca5a5; }
-  .ann-card-title {
-    font-size: 1.05rem; font-weight: 800; color: var(--text);
-    margin-bottom: 8px; line-height: 1.35;
-    display: flex; align-items: center; gap: 8px;
-  }
-  .ann-card-body {
-    font-size: 0.88rem; color: var(--text); line-height: 1.7;
-    white-space: pre-wrap; margin-bottom: 14px;
-  }
-  .ann-card-footer {
-    display: flex; align-items: center; gap: 12px;
-    border-top: 1px solid var(--border); padding-top: 12px;
-  }
-  .ann-like-btn {
-    display: inline-flex; align-items: center; gap: 5px;
-    background: var(--blue-50); border: 1.5px solid var(--border);
-    border-radius: 20px; padding: 5px 14px;
-    font-size: 0.82rem; font-weight: 600; cursor: pointer;
-    transition: all 0.15s; color: var(--text-muted);
-    user-select: none;
-  }
-  .ann-like-btn:hover:not(:disabled) { background: #fef9c3; border-color: #fbbf24; color: #92400e; }
-  .ann-like-btn.liked { background: #fef9c3; border-color: #fbbf24; color: #92400e; }
-  .ann-like-btn:disabled { opacity: 0.5; cursor: default; }
-  .ann-like-count { font-size: 0.78rem; color: var(--text-muted); }
-  .ann-edited-tag {
-    font-size: 0.7rem; color: var(--text-muted); font-style: italic;
-  }
-
   /* ── SOP PAGE ──────────────────────────────────────────────── */
   .sop-grid {
     display: grid;
@@ -1116,6 +1051,52 @@
     .profile-grid { grid-template-columns: repeat(2, 140px); gap: 10px; }
     .profile-logo { font-size: 1.8rem; }
   }
+  /* ── PRODUCTION SCHEDULE MATRIX ───────────────────────────── */
+  .sched-table { min-width: 820px; }
+  .sched-table th, .sched-table td { text-align: center; padding: 8px 6px; font-size: 0.8rem; }
+  .sched-table th { background: var(--blue-50); color: var(--blue-800); font-weight: 700; font-size: 0.75rem; }
+  .sched-product-col { text-align: left !important; min-width: 140px; font-weight: 700; }
+  .sched-del-col { width: 36px; }
+  .sched-cell {
+    width: 52px; height: 38px; border-radius: 6px;
+    border: 1.5px dashed var(--border); background: transparent;
+    cursor: pointer; transition: all 0.15s; position: relative;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem; margin: auto;
+  }
+  .sched-cell:hover { border-color: var(--blue-400); background: var(--blue-50); }
+  .sched-cell.has-comment {
+    border-style: solid; border-color: var(--blue-400);
+    background: var(--blue-50);
+  }
+  .sched-cell.has-comment::after {
+    content: '';
+    position: absolute; top: 3px; right: 3px;
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--blue-500);
+  }
+  .sched-cell-icon { font-size: 0.85rem; line-height: 1; }
+  .sched-product-name { font-weight: 600; font-size: 0.85rem; text-align: left; }
+
+  /* Comment tooltip preview */
+  .sched-cell[data-preview]:hover::before {
+    content: attr(data-preview);
+    position: absolute; bottom: calc(100% + 6px); left: 50%;
+    transform: translateX(-50%);
+    background: #1e293b; color: #fff;
+    font-size: 0.7rem; border-radius: 6px;
+    padding: 5px 9px; white-space: nowrap;
+    max-width: 200px; overflow: hidden; text-overflow: ellipsis;
+    pointer-events: none; z-index: 300;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  .sched-cell[data-preview]:hover::after {
+    bottom: calc(100% + 2px);
+    background: #1e293b;
+    width: 7px; height: 7px;
+    top: auto; left: 50%; transform: translateX(-50%) rotate(45deg);
+    border-radius: 1px; z-index: 299;
+  }
   </style>
 </head>
 <body>
@@ -1198,10 +1179,6 @@
       <div class="nav-item active" onclick="showPage('dashboard',this)">
         <span class="nav-icon">🏠</span> Dashboard
       </div>
-      <div class="nav-item" onclick="showPage('announcements',this)" id="nav-announcements">
-        <span class="nav-icon">📢</span> Announcements
-        <span class="nav-badge" id="badge-announce" style="display:none">0</span>
-      </div>
       <div class="nav-section-label">Modules</div>
       <div class="nav-item" onclick="showPage('training',this)">
         <span class="nav-icon">📅</span> Training Schedule
@@ -1236,6 +1213,7 @@
         <div id="search-results" class="search-results"></div>
       </div>
       <div class="topbar-right">
+        <button class="btn btn-primary btn-sm officer-only" onclick="openAnnounceModal()" title="Post announcement" style="display:inline-flex;align-items:center;gap:6px">📢 <span class="announce-btn-label">Announce</span></button>
         <button class="bell-btn" onclick="toggleNotifPanel()" title="Notifications">
           🔔<span id="bell-dot" class="bell-dot"></span>
         </button>
@@ -1370,6 +1348,70 @@
             <p>No training records yet. Add your first training!</p>
           </div>
         </div>
+
+        <!-- ── PRODUCTION SCHEDULE MATRIX ────────────────────── -->
+        <div class="card" style="margin-top:24px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+            <div>
+              <div class="card-title" style="margin:0">📆 Production Schedule 2026</div>
+              <div style="font-size:0.78rem;color:var(--text-muted);margin-top:2px">Click any cell to add a comment. Officers can add products.</div>
+            </div>
+            <button class="btn btn-primary btn-sm officer-only" onclick="openAddProductModal()" style="white-space:nowrap">+ Add Product</button>
+          </div>
+          <div class="table-wrap">
+            <table id="sched-table" class="sched-table">
+              <thead>
+                <tr>
+                  <th class="sched-product-col">Product</th>
+                  <th>Jan</th><th>Feb</th><th>Mar</th><th>Apr</th>
+                  <th>May</th><th>Jun</th><th>Jul</th><th>Aug</th>
+                  <th>Sep</th><th>Oct</th><th>Nov</th><th>Dec</th>
+                  <th class="officer-only sched-del-col"></th>
+                </tr>
+              </thead>
+              <tbody id="sched-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Add Product Modal inline -->
+        <div class="modal-overlay" id="modal-addproduct">
+          <div class="modal" style="max-width:380px">
+            <div class="modal-header">
+              <div class="modal-title">Add Product</div>
+              <div class="modal-close" onclick="closeModal('addproduct')">✕</div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Product Name *</label>
+              <input class="form-input" id="new-product-name" placeholder="e.g. Sambal Matah">
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-secondary" onclick="closeModal('addproduct')">Cancel</button>
+              <button class="btn btn-primary" onclick="addSchedProduct()">Add</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cell Comment Modal -->
+        <div class="modal-overlay" id="modal-cell-comment">
+          <div class="modal" style="max-width:400px">
+            <div class="modal-header">
+              <div class="modal-title" id="cell-comment-title">Add Comment</div>
+              <div class="modal-close" onclick="closeModal('cell-comment')">✕</div>
+            </div>
+            <input type="hidden" id="cell-comment-key">
+            <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:10px" id="cell-comment-meta"></div>
+            <div class="form-group">
+              <label class="form-label">Comment</label>
+              <textarea class="form-input form-textarea" id="cell-comment-text" rows="4" placeholder="e.g. Production paused — raw material delayed"></textarea>
+            </div>
+            <div class="form-actions" id="cell-comment-actions">
+              <button class="btn btn-secondary" onclick="closeModal('cell-comment')">Cancel</button>
+              <button class="btn btn-danger btn-sm officer-only" id="cell-comment-del-btn" onclick="deleteCellComment()" style="display:none">Delete</button>
+              <button class="btn btn-primary officer-only" onclick="saveCellComment()">Save</button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- ── TO-DO PAGE ──────────────────────────────────────── -->
@@ -1490,20 +1532,6 @@
           </div>
         </div>
       </div>
-      <!-- ── ANNOUNCEMENTS PAGE ────────────────────────────── -->
-      <div id="page-announcements" class="page">
-        <div class="page-header">
-          <div>
-            <h1>📢 Announcements</h1>
-            <p>Updates and notices from QC Officers</p>
-          </div>
-          <button class="btn btn-primary officer-only" onclick="openAnnounceModal()">+ New Announcement</button>
-        </div>
-        <div id="announce-list">
-          <div class="loading"><div class="spinner"></div></div>
-        </div>
-      </div>
-
       <!-- ── SOP PAGE ──────────────────────────────────────── -->
       <div id="page-sop" class="page">
         <div class="page-header">
@@ -1743,12 +1771,11 @@
 <div class="modal-overlay" id="modal-announce">
   <div class="modal">
     <div class="modal-header">
-      <div class="modal-title" id="modal-announce-title">📢 Post Announcement</div>
+      <div class="modal-title">📢 Post Announcement</div>
       <div class="modal-close" onclick="closeModal('announce')">✕</div>
     </div>
-    <input type="hidden" id="an-id">
     <div style="font-size:0.82rem;color:var(--text-muted);margin-bottom:10px">
-      This message will appear in the Announcements page for every QC Officer and QC Field user, and will be searchable from the top bar.
+      This message will appear in the Notification Center for every QC Officer and QC Field user, and will be searchable from the top bar.
     </div>
     <div class="form-group">
       <label class="form-label">Title *</label>
@@ -1760,7 +1787,7 @@
     </div>
     <div class="form-actions">
       <button class="btn btn-secondary" onclick="closeModal('announce')">Cancel</button>
-      <button class="btn btn-primary" onclick="saveAnnouncement()">📢 Post</button>
+      <button class="btn btn-primary" onclick="saveAnnouncement()">📢 Post Announcement</button>
     </div>
   </div>
 </div>
@@ -1795,7 +1822,9 @@ let demoData = {
   product_specifications: [],
   trial_reports: [],
   sop_documents: [],
-  announcements: []
+  announcements: [],
+  sched_products: [],
+  sched_comments: []
 };
 
 function initSupabase() {
@@ -1849,7 +1878,7 @@ function seedDemoData() {
     { id: 1, product_name:'Product C', trial_date: addDays(today,-3), assigned_person:'Syahdan', google_drive_link:'https://drive.google.com', ai_summary:'Trial completed successfully. Texture and color meet specifications. pH within acceptable range (4.2–4.6). Recommend approval.', notes:'Small batch trial — 50kg', last_updated_by:'Lussy', last_updated_at:now },
   ];
   demoData.announcements = [
-    { id: 1, title:'Welcome to QCBoard 📢', message:'Use this Announcement feature to broadcast important updates to all QC Officers and QC Field staff. Posts appear in the Announcements page for everyone and are searchable from the top bar.', posted_by:'Nashir', posted_at: now, last_updated_by:'Nashir', last_updated_at: now, likes:'[]' },
+    { id: 1, title:'Welcome to QCBoard 📢', message:'Use this Announcement feature to broadcast important updates to all QC Officers and QC Field staff. Posts appear in everyone\'s Notification Center and are searchable from the top bar.', posted_by:'Nashir', posted_at: now, last_updated_by:'Nashir', last_updated_at: now },
   ];
   saveDemoData();
 }
@@ -1911,7 +1940,6 @@ function enterApp(name, role, color) {
   initSupabase();
   loadDashboard();
   updateTopbarDate();
-  setTimeout(updateAnnounceBadge, 800); // show unread badge after data loads
 }
 
 function updateSidebarUser(name, color, role) {
@@ -2115,8 +2143,7 @@ function updateTopbarDate() {
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 const pageNames = {
   dashboard:'Dashboard', training:'Training Schedule',
-  todo:'To-Do List', specs:'Product Specifications', trials:'Trial Reports',
-  announcements:'Announcements', sop:'SOP'
+  todo:'To-Do List', specs:'Product Specifications', trials:'Trial Reports'
 };
 
 function showPage(name, el) {
@@ -2125,12 +2152,12 @@ function showPage(name, el) {
   document.getElementById('page-'+name).classList.add('active');
   if (el) el.classList.add('active');
   document.getElementById('topbar-title').textContent = pageNames[name] || name;
+  // Load page data
   if (name === 'dashboard') loadDashboard();
   else if (name === 'training') loadTrainingPage();
   else if (name === 'todo') loadTodoPage();
   else if (name === 'specs') loadSpecsPage();
   else if (name === 'trials') loadTrialsPage();
-  else if (name === 'announcements') loadAnnouncementsPage();
   else if (name === 'sop') loadSOPPage();
 }
 
@@ -2139,8 +2166,14 @@ function showPage(name, el) {
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 async function dbGet(table) {
   if (DEMO_MODE) return demoData[table] || [];
-  const { data, error } = await db.from(table).select('*').order('last_updated_at', { ascending:false });
-  if (error) { showToast('DB read error: '+error.message, 'error'); return []; }
+  const orderCols = {
+    announcements: 'posted_at',
+    sched_products: 'sort_order',
+    sched_comments: 'updated_at',
+  };
+  const col = orderCols[table] || 'last_updated_at';
+  const { data, error } = await db.from(table).select('*').order(col, { ascending: col === 'sort_order' });
+  if (error) { showToast(`DB read error (${table}): ${error.message}`, 'error'); return []; }
   return data || [];
 }
 
@@ -2273,6 +2306,7 @@ let trainings = [];
 async function loadTrainingPage() {
   trainings = await dbGet('training_schedules');
   renderTrainingTable();
+  loadSchedMatrix();
 }
 
 function renderTrainingTable() {
@@ -2317,6 +2351,184 @@ function renderTrainingTable() {
   }).join('');
 }
 
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   PRODUCTION SCHEDULE MATRIX
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+const SCHED_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const SCHED_DEFAULT_PRODUCTS = ['Mentai Sauce','Sambal Korek'];
+const SCHED_STORAGE_KEY = 'qcboard_sched_2026';
+
+// Structure stored in Supabase table `production_schedule`
+// Each row: { id, product_name, cell_key (e.g. "Mentai Sauce__Mar"), comment, updated_by, updated_at }
+// Products list stored in `sched_products` table: { id, product_name, sort_order }
+
+let schedProducts = []; // ordered list of product names
+let schedComments = {}; // key → { id, comment, updated_by, updated_at }
+
+async function loadSchedMatrix() {
+  // Load products
+  const prodRows = await dbGet('sched_products');
+  if (prodRows.length) {
+    schedProducts = prodRows
+      .sort((a,b) => (a.sort_order||0) - (b.sort_order||0))
+      .map(r => r.product_name);
+  } else {
+    // Seed defaults if none exist
+    schedProducts = [...SCHED_DEFAULT_PRODUCTS];
+    for (let i = 0; i < SCHED_DEFAULT_PRODUCTS.length; i++) {
+      await dbInsert('sched_products', { product_name: SCHED_DEFAULT_PRODUCTS[i], sort_order: i });
+    }
+  }
+  // Load cell comments
+  const commentRows = await dbGet('sched_comments');
+  schedComments = {};
+  commentRows.forEach(r => { schedComments[r.cell_key] = r; });
+  renderSchedMatrix();
+}
+
+function renderSchedMatrix() {
+  const tbody = document.getElementById('sched-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = schedProducts.map(prod => {
+    const cells = SCHED_MONTHS.map((mon, mi) => {
+      const key = `${prod}__${mon}`;
+      const rec = schedComments[key];
+      const hasComment = rec && rec.comment;
+      const preview = hasComment ? rec.comment.slice(0, 40) + (rec.comment.length > 40 ? '…' : '') : '';
+      const dataPreview = hasComment ? `data-preview="${preview.replace(/"/g,"'")}"` : '';
+      return `<td>
+        <div class="sched-cell${hasComment ? ' has-comment' : ''}"
+          ${dataPreview}
+          onclick="openCellComment('${prod.replace(/'/g,"\\'")}','${mon}')">
+          ${hasComment ? '<span class="sched-cell-icon">💬</span>' : ''}
+        </div>
+      </td>`;
+    }).join('');
+    const delBtn = currentRole === 'officer'
+      ? `<td class="officer-only"><button class="ann-action-btn del" style="padding:3px 7px;font-size:0.72rem" onclick="deleteSchedProduct('${prod.replace(/'/g,"\\'")}')">🗑</button></td>`
+      : '<td class="officer-only"></td>';
+    return `<tr>
+      <td class="sched-product-col sched-product-name">${prod}</td>
+      ${cells}
+      ${delBtn}
+    </tr>`;
+  }).join('');
+
+  // Hide officer-only columns for field
+  if (currentRole === 'field') {
+    document.querySelectorAll('#sched-tbody .officer-only').forEach(el => el.style.display = 'none');
+    const delHead = document.querySelector('#sched-table thead .sched-del-col');
+    if (delHead) delHead.style.display = 'none';
+  }
+}
+
+function openAddProductModal() {
+  if (blockIfField()) return;
+  document.getElementById('new-product-name').value = '';
+  openModal('addproduct');
+  setTimeout(() => document.getElementById('new-product-name').focus(), 50);
+}
+
+async function addSchedProduct() {
+  if (blockIfField()) return;
+  const name = document.getElementById('new-product-name').value.trim();
+  if (!name) { showToast('Product name is required', 'error'); return; }
+  if (schedProducts.includes(name)) { showToast('Product already exists', 'warning'); return; }
+  const sortOrder = schedProducts.length;
+  const saved = await dbInsert('sched_products', { product_name: name, sort_order: sortOrder });
+  if (saved) {
+    schedProducts.push(name);
+    showToast(`"${name}" added!`, 'success');
+    closeModal('addproduct');
+    renderSchedMatrix();
+  }
+}
+
+async function deleteSchedProduct(prod) {
+  if (blockIfField()) return;
+  if (!confirm(`Remove "${prod}" from the schedule? Comments for this product will also be deleted.`)) return;
+  // Delete product row
+  const prodRows = await dbGet('sched_products');
+  const row = prodRows.find(r => r.product_name === prod);
+  if (row) await dbDelete('sched_products', row.id);
+  // Delete all comments for this product
+  const commentRows = await dbGet('sched_comments');
+  for (const r of commentRows.filter(c => c.cell_key.startsWith(prod + '__'))) {
+    await dbDelete('sched_comments', r.id);
+    delete schedComments[r.cell_key];
+  }
+  schedProducts = schedProducts.filter(p => p !== prod);
+  showToast(`"${prod}" removed`, 'success');
+  renderSchedMatrix();
+}
+
+function openCellComment(prod, mon) {
+  const key = `${prod}__${mon}`;
+  const rec = schedComments[key];
+  document.getElementById('cell-comment-key').value = key;
+  document.getElementById('cell-comment-title').textContent = `${prod} — ${mon} 2026`;
+  document.getElementById('cell-comment-meta').textContent = rec
+    ? `Last updated by ${rec.updated_by||'—'} · ${fmtDateTime(rec.updated_at)}`
+    : 'No comment yet.';
+  document.getElementById('cell-comment-text').value = rec ? rec.comment : '';
+  document.getElementById('cell-comment-text').disabled = currentRole !== 'officer';
+
+  // Show/hide delete and save buttons
+  const delBtn = document.getElementById('cell-comment-del-btn');
+  if (delBtn) delBtn.style.display = (rec && currentRole === 'officer') ? '' : 'none';
+
+  const actionsEl = document.getElementById('cell-comment-actions');
+  // For field users, show only Close
+  if (currentRole === 'field') {
+    actionsEl.innerHTML = `<button class="btn btn-secondary" onclick="closeModal('cell-comment')">Close</button>`;
+  } else {
+    actionsEl.innerHTML = `
+      <button class="btn btn-secondary" onclick="closeModal('cell-comment')">Cancel</button>
+      ${rec ? '<button class="btn btn-danger btn-sm" onclick="deleteCellComment()">Delete</button>' : ''}
+      <button class="btn btn-primary" onclick="saveCellComment()">Save</button>`;
+  }
+  openModal('cell-comment');
+  if (currentRole === 'officer') setTimeout(() => document.getElementById('cell-comment-text').focus(), 60);
+}
+
+async function saveCellComment() {
+  if (blockIfField()) return;
+  const key   = document.getElementById('cell-comment-key').value;
+  const text  = document.getElementById('cell-comment-text').value.trim();
+  if (!text) { showToast('Comment cannot be empty', 'error'); return; }
+  const existing = schedComments[key];
+  const row = {
+    cell_key: key,
+    comment: text,
+    updated_by: currentUser,
+    updated_at: new Date().toISOString()
+  };
+  if (existing) {
+    await dbUpdate('sched_comments', existing.id, row);
+  } else {
+    const saved = await dbInsert('sched_comments', row);
+    if (saved) row.id = saved.id;
+  }
+  schedComments[key] = { ...existing, ...row };
+  showToast('Comment saved!', 'success');
+  closeModal('cell-comment');
+  renderSchedMatrix();
+}
+
+async function deleteCellComment() {
+  if (blockIfField()) return;
+  const key = document.getElementById('cell-comment-key').value;
+  const existing = schedComments[key];
+  if (!existing) return;
+  await dbDelete('sched_comments', existing.id);
+  delete schedComments[key];
+  showToast('Comment deleted', 'success');
+  closeModal('cell-comment');
+  renderSchedMatrix();
+}
+
 function openModal(type, id) {
   document.getElementById('modal-'+type).classList.add('open');
 }
@@ -2328,213 +2540,40 @@ function closeModal(type) {
   if (type==='specs') { ['sp-id','sp-product','sp-revision','sp-date','sp-approved','sp-link','sp-summary'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; }); document.getElementById('modal-specs-title').textContent='Add Specification'; }
   if (type==='trials') { ['tr-id','tr-product','tr-date','tr-assigned','tr-link','tr-notes'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; }); document.getElementById('tr-ai-area').style.display='none'; document.getElementById('modal-trials-title').textContent='Add Trial Report'; }
   if (type==='announce') { ['an-title','an-message'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; }); }
+  if (type==='addproduct') { const el=document.getElementById('new-product-name'); if(el) el.value=''; }
+  if (type==='cell-comment') { const el=document.getElementById('cell-comment-text'); if(el) el.value=''; }
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   ANNOUNCEMENTS PAGE
+   ANNOUNCEMENTS  (officers post · everyone reads in Notification Center & search)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-let _announcements = []; // page-level cache
-
-async function loadAnnouncementsPage() {
-  const list = document.getElementById('announce-list');
-  list.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
-  _announcements = await dbGet('announcements');
-
-  // Mark all as seen for this user
-  const seenKey = `qcboard_announce_seen_${currentUser||'anon'}`;
-  const lastSeen = parseInt(localStorage.getItem(seenKey) || '0', 10);
-
-  // Clear unread badge once page is opened
-  localStorage.setItem(seenKey, String(Date.now()));
-  document.getElementById('badge-announce').style.display = 'none';
-
-  if (!_announcements.length) {
-    list.innerHTML = `<div class="empty-state"><div class="empty-icon">📢</div><p>No announcements yet${currentRole==='officer' ? ' — post the first one!' : '.'}</p></div>`;
-    return;
-  }
-
-  list.innerHTML = _announcements.map(a => renderAnnCard(a, lastSeen)).join('');
-}
-
-function renderAnnCard(a, lastSeen) {
-  const postedMs  = new Date(a.posted_at || a.last_updated_at || 0).getTime();
-  const isUnread  = postedMs > (lastSeen || 0);
-  const isEdited  = a.last_updated_at && a.last_updated_at !== a.posted_at;
-  const poster    = a.posted_by || a.last_updated_by || '?';
-  const avatarLetter = poster[0].toUpperCase();
-
-  // Likes: stored as JSON array of user tokens in the likes column
-  const likes     = safeParseArr(a.likes);
-  const likeKey   = `qcboard_like_${currentUser||'anon'}_${a.id}`;
-  // For field: count how many times this user liked (max 5)
-  // For officer: just show total
-  const myLikes   = parseInt(localStorage.getItem(likeKey) || '0', 10);
-  const totalLikes = likes.length;
-  const canLike   = currentRole === 'field' && myLikes < 5;
-  const liked     = myLikes > 0;
-
-  // Officer action buttons
-  const officerActions = currentRole === 'officer' ? `
-    <div class="ann-card-actions-officer">
-      <button class="ann-action-btn" onclick="editAnnouncement(${a.id})">✏️ Edit</button>
-      <button class="ann-action-btn del" onclick="deleteAnnouncement(${a.id})">🗑 Delete</button>
-    </div>` : '';
-
-  return `
-  <div class="ann-card${isUnread ? ' unread' : ''}" id="ann-card-${a.id}">
-    <div class="ann-card-header">
-      <div class="ann-card-avatar">${avatarLetter}</div>
-      <div class="ann-card-meta">
-        <div class="ann-card-poster">${escHtml(poster)}</div>
-        <div class="ann-card-date">${fmtDateTime(a.posted_at || a.last_updated_at)}${isEdited ? ` · <span class="ann-edited-tag">edited ${fmtDateTime(a.last_updated_at)}</span>` : ''}</div>
-      </div>
-      ${officerActions}
-    </div>
-    <div class="ann-card-title">
-      ${isUnread ? '<span class="unread-dot"></span>' : ''}
-      ${escHtml(a.title || '(untitled)')}
-    </div>
-    <div class="ann-card-body">${escHtml(a.message || '')}</div>
-    <div class="ann-card-footer">
-      <button class="ann-like-btn${liked ? ' liked' : ''}"
-        id="like-btn-${a.id}"
-        onclick="likeAnnouncement(${a.id})"
-        ${!canLike && currentRole === 'field' ? 'disabled' : ''}
-        ${currentRole === 'officer' ? 'disabled title="Officers can\'t like"' : ''}
-        title="${currentRole==='field' ? (canLike ? `You've liked ${myLikes}/5 times` : 'You\'ve used all 5 👍') : 'Only QC Field can react'}">
-        👍 <span id="like-count-${a.id}">${totalLikes}</span>
-      </button>
-      ${currentRole === 'field' ? `<span class="ann-like-count">${myLikes}/5 reacts used</span>` : ''}
-    </div>
-  </div>`;
-}
-
-function safeParseArr(val) {
-  if (!val) return [];
-  if (Array.isArray(val)) return val;
-  try { const p = JSON.parse(val); return Array.isArray(p) ? p : []; } catch { return []; }
-}
-
-async function likeAnnouncement(id) {
-  if (currentRole !== 'field') return;
-  const likeKey = `qcboard_like_${currentUser||'anon'}_${id}`;
-  const myLikes = parseInt(localStorage.getItem(likeKey) || '0', 10);
-  if (myLikes >= 5) { showToast('You\'ve used all 5 👍 for this announcement', 'warning'); return; }
-
-  // Fetch fresh record
-  const ann = _announcements.find(a => a.id === id);
-  if (!ann) return;
-  const likes = safeParseArr(ann.likes);
-
-  // Add a new like entry (using user+timestamp so duplicates are trackable)
-  likes.push(`${currentUser||'field'}_${Date.now()}`);
-
-  const ok = await dbUpdate('announcements', id, { likes: JSON.stringify(likes) });
-  if (ok) {
-    // Update local cache
-    ann.likes = JSON.stringify(likes);
-    const newMyLikes = myLikes + 1;
-    localStorage.setItem(likeKey, String(newMyLikes));
-
-    // Update UI without full reload
-    const countEl = document.getElementById(`like-count-${id}`);
-    if (countEl) countEl.textContent = likes.length;
-    const btn = document.getElementById(`like-btn-${id}`);
-    if (btn) {
-      btn.classList.add('liked');
-      if (newMyLikes >= 5) btn.disabled = true;
-      btn.title = `You've liked ${newMyLikes}/5 times`;
-    }
-    // Update react count label next to button
-    const card = document.getElementById(`ann-card-${id}`);
-    if (card) {
-      const countLabel = card.querySelector('.ann-like-count');
-      if (countLabel) countLabel.textContent = `${newMyLikes}/5 reacts used`;
-    }
-    showToast(`👍 +1 (${newMyLikes}/5)`, 'success');
-  }
-}
-
-function openAnnounceModal(editId) {
+function openAnnounceModal() {
   if (currentRole !== 'officer') { showToast('Only QC Officers can post announcements', 'error'); return; }
-  document.getElementById('an-id').value = editId || '';
-  document.getElementById('an-title').value = '';
-  document.getElementById('an-message').value = '';
-  document.getElementById('modal-announce-title').textContent = editId ? '✏️ Edit Announcement' : '📢 New Announcement';
-
-  if (editId) {
-    const ann = _announcements.find(a => a.id === editId);
-    if (ann) {
-      document.getElementById('an-title').value = ann.title || '';
-      document.getElementById('an-message').value = ann.message || '';
-    }
-  }
   openModal('announce');
   setTimeout(() => { const el = document.getElementById('an-title'); if (el) el.focus(); }, 50);
 }
 
 async function saveAnnouncement() {
   if (currentRole !== 'officer') { showToast('Only QC Officers can post announcements', 'error'); return; }
-  const title   = document.getElementById('an-title').value.trim();
+  const title = document.getElementById('an-title').value.trim();
   const message = document.getElementById('an-message').value.trim();
-  const id      = document.getElementById('an-id').value;
   if (!title || !message) { showToast('Title and message are required', 'error'); return; }
   const now = new Date().toISOString();
-
-  if (id) {
-    // Edit existing
-    const ann = _announcements.find(a => String(a.id) === String(id));
-    const row = { title, message, last_updated_by: currentUser, last_updated_at: now };
-    const ok = await dbUpdate('announcements', parseInt(id), row);
-    if (ok) {
-      showToast('Announcement updated!', 'success');
-      closeModal('announce');
-      loadAnnouncementsPage();
-      updateAnnounceBadge();
-    }
-  } else {
-    // New
-    const row = { title, message, posted_by: currentUser, posted_at: now, last_updated_by: currentUser, last_updated_at: now, likes: '[]' };
-    const saved = await dbInsert('announcements', row);
-    if (saved) {
-      showToast('📢 Announcement posted!', 'success');
-      closeModal('announce');
-      loadAnnouncementsPage();
-      updateAnnounceBadge();
-    }
+  const row = {
+    title, message,
+    posted_by: currentUser,
+    posted_at: now,
+    last_updated_by: currentUser,
+    last_updated_at: now
+  };
+  const saved = await dbInsert('announcements', row);
+  if (saved) {
+    showToast('📢 Announcement posted to everyone!', 'success');
+    closeModal('announce');
+    // Refresh anything that surfaces announcements
+    renderNotifPanel();
+    document.getElementById('bell-dot').classList.add('active');
   }
-}
-
-function editAnnouncement(id) {
-  if (currentRole !== 'officer') return;
-  openAnnounceModal(id);
-}
-
-async function deleteAnnouncement(id) {
-  if (currentRole !== 'officer') return;
-  if (!confirm('Delete this announcement? This cannot be undone.')) return;
-  const ok = await dbDelete('announcements', id);
-  if (ok) {
-    showToast('Announcement deleted', 'success');
-    loadAnnouncementsPage();
-    updateAnnounceBadge();
-  }
-}
-
-async function updateAnnounceBadge() {
-  // Show unread count on nav badge
-  const seenKey = `qcboard_announce_seen_${currentUser||'anon'}`;
-  const lastSeen = parseInt(localStorage.getItem(seenKey) || '0', 10);
-  const rows = await dbGet('announcements');
-  const unread = rows.filter(a => new Date(a.posted_at||a.last_updated_at||0).getTime() > lastSeen).length;
-  const badge = document.getElementById('badge-announce');
-  if (badge) {
-    badge.textContent = unread;
-    badge.style.display = unread > 0 ? '' : 'none';
-  }
-  // Also refresh bell dot
-  const bellDot = document.getElementById('bell-dot');
-  if (bellDot) bellDot.classList.toggle('active', unread > 0);
 }
 
 async function saveTraining() {
@@ -3039,10 +3078,6 @@ async function saveSOP() {
   }
   document.getElementById('modal-sop').classList.remove('active');
   loadSOPPage();
-}
-
-function escHtml(str) {
-  return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 function fmtDateTime(d) {
