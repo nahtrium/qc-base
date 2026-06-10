@@ -76,6 +76,7 @@
       position: absolute;
       inset: 0;
       background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+      pointer-events: none;
     }
     .profile-logo {
       font-size: 2.4rem;
@@ -117,6 +118,7 @@
       cursor: pointer;
       transition: all 0.22s ease;
       backdrop-filter: blur(12px);
+      position: relative;
     }
     .profile-card:hover {
       background: rgba(255,255,255,0.22);
@@ -1134,6 +1136,10 @@
         <span class="nav-icon">🏠</span> Dashboard
       </div>
       <div class="nav-section-label">Modules</div>
+      <div class="nav-item" onclick="showPage('announce',this)">
+        <span class="nav-icon">📢</span> Announcements
+        <span class="nav-badge" id="badge-announce" style="display:none;background:var(--green)">0</span>
+      </div>
       <div class="nav-item" onclick="showPage('training',this)">
         <span class="nav-icon">📅</span> Training Schedule
         <span class="nav-badge" id="badge-training" style="display:none">0</span>
@@ -1300,6 +1306,45 @@
           <div id="training-empty" class="empty-state" style="display:none">
             <div class="empty-icon">📅</div>
             <p>No training records yet. Add your first training!</p>
+          </div>
+        </div>
+
+        <!-- Sensory Training Schedule (second table) -->
+        <div class="page-header" style="margin-top:28px">
+          <div>
+            <h1 style="font-size:1.3rem">👅 Sensory Training Schedule 2026</h1>
+            <p>Monthly sensory training plan per product. Click any cell to view or add a comment.</p>
+          </div>
+          <button class="btn btn-primary officer-only" onclick="addCalendarProduct()">+ Add Product</button>
+        </div>
+        <div class="card">
+          <div class="table-wrap">
+            <table id="calendar-table">
+              <thead>
+                <tr id="calendar-thead-row">
+                  <th style="min-width:160px;position:sticky;left:0;background:var(--surface);z-index:2">Product</th>
+                </tr>
+              </thead>
+              <tbody id="calendar-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── ANNOUNCEMENTS PAGE ─────────────────────────────── -->
+      <div id="page-announce" class="page">
+        <div class="page-header">
+          <div>
+            <h1>📢 Announcements</h1>
+            <p>Broadcasts from QC Officers to the whole team.</p>
+          </div>
+          <button class="btn btn-primary officer-only" onclick="openAnnounceModal()">+ New Announcement</button>
+        </div>
+        <div class="card">
+          <div id="announce-list" style="display:flex;flex-direction:column;gap:12px;padding:8px"></div>
+          <div id="announce-empty" class="empty-state" style="display:none">
+            <div class="empty-icon">📢</div>
+            <p>No announcements yet.</p>
           </div>
         </div>
       </div>
@@ -1657,6 +1702,24 @@
   </div>
 </div>
 
+<!-- Calendar Cell Comment Modal -->
+<div class="modal-overlay" id="modal-cal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-cal-title">Comment</div>
+      <div class="modal-close" onclick="closeModal('cal')">✕</div>
+    </div>
+    <div class="modal-body">
+      <div id="cal-meta" style="font-size:0.85rem;color:var(--text-muted);margin-bottom:8px"></div>
+      <textarea class="form-input form-textarea" id="cal-comment" placeholder="Add a comment about this month's sensory training..." rows="5"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('cal')">Close</button>
+      <button class="btn btn-primary officer-only" onclick="saveCalendarComment()">Save Comment</button>
+    </div>
+  </div>
+</div>
+
 <!-- Announcement Modal -->
 <div class="modal-overlay" id="modal-announce">
   <div class="modal">
@@ -1765,6 +1828,10 @@ function seedDemoData() {
   demoData.trial_reports = [
     { id: 1, product_name:'Product C', trial_date: addDays(today,-3), assigned_person:'Syahdan', google_drive_link:'https://drive.google.com', ai_summary:'Trial completed successfully. Texture and color meet specifications. pH within acceptable range (4.2–4.6). Recommend approval.', notes:'Small batch trial — 50kg', last_updated_by:'Lussy', last_updated_at:now },
   ];
+  if (!demoData.production_calendar) demoData.production_calendar = {
+    products: ['Mentai Sauce','Sambal Korek'],
+    cells: {} // key: "product||monthIdx" -> { text, by, at }
+  };
   demoData.announcements = [
     { id: 1, title:'Welcome to QCBoard 📢', message:'Use this Announcement feature to broadcast important updates to all QC Officers and QC Field staff. Posts appear in everyone\'s Notification Center and are searchable from the top bar.', posted_by:'Nashir', posted_at: now, last_updated_by:'Nashir', last_updated_at: now },
   ];
@@ -1789,16 +1856,11 @@ let pendingProfile = null;
 function selectProfile(name, role, color) {
   if (role === 'officer') {
     pendingProfile = { name, role, color };
-    const pwInput = document.getElementById('pw-input');
-    const pwError = document.getElementById('pw-error');
-    const pwTitle = document.getElementById('pw-title');
-    const pwOverlay = document.getElementById('pw-overlay');
-    if (!pwOverlay) { console.error('pw-overlay missing'); return; }
-    if (pwInput) pwInput.value = '';
-    if (pwError) pwError.textContent = '';
-    if (pwTitle) pwTitle.textContent = `Sign in as ${name}`;
-    pwOverlay.classList.add('active');
-    setTimeout(() => { if (pwInput) pwInput.focus(); }, 50);
+    document.getElementById('pw-input').value = '';
+    document.getElementById('pw-error').textContent = '';
+    document.getElementById('pw-title').textContent = `Sign in as ${name}`;
+    document.getElementById('pw-overlay').classList.add('active');
+    setTimeout(() => document.getElementById('pw-input').focus(), 50);
     return;
   }
   enterApp(name, role, color);
@@ -1853,21 +1915,14 @@ function switchProfile() {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-  // Valid names after profile consolidation
-  const validNames = ['Nashir','Gina','Lussy','Bianca','QC Field'];
   const raw = localStorage.getItem('qcboard_user');
   if (raw) {
     try {
       const v = JSON.parse(raw);
-      if (v && v.name && validNames.includes(v.name)) {
+      if (v && v.name && profileColors[v.name]) {
         enterApp(v.name, v.role || profileRoles[v.name], profileColors[v.name]);
-      } else {
-        // Stale or unknown name — clear it so the profile picker shows cleanly
-        localStorage.removeItem('qcboard_user');
       }
-    } catch {
-      localStorage.removeItem('qcboard_user');
-    }
+    } catch {}
   }
   updateTopbarDate();
 });
@@ -2043,7 +2098,8 @@ function updateTopbarDate() {
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 const pageNames = {
   dashboard:'Dashboard', training:'Training Schedule',
-  todo:'To-Do List', specs:'Product Specifications', trials:'Trial Reports'
+  todo:'To-Do List', specs:'Product Specifications', trials:'Trial Reports',
+  sop:'SOP', announce:'Announcements', calendar:'Sensory Training Schedule'
 };
 
 function showPage(name, el) {
@@ -2059,6 +2115,7 @@ function showPage(name, el) {
   else if (name === 'specs') loadSpecsPage();
   else if (name === 'trials') loadTrialsPage();
   else if (name === 'sop') loadSOPPage();
+  else if (name === 'announce') loadAnnouncePage();
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -2841,6 +2898,122 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
     }
   });
 });
+
+/* ── PRODUCTION CALENDAR ─────────────────────────────────── */
+const CAL_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+let _calEditKey = null;
+
+function _calData() {
+  if (!demoData.production_calendar) {
+    demoData.production_calendar = { products: ['Mentai Sauce','Sambal Korek'], cells: {} };
+    saveDemoData();
+  }
+  return demoData.production_calendar;
+}
+
+function renderCalendarTable() {
+  const data = _calData();
+  const isField = currentRole === 'field';
+  // Header
+  const thead = document.getElementById('calendar-thead-row');
+  if (!thead) return;
+  thead.innerHTML = '<th style="min-width:160px;position:sticky;left:0;background:var(--surface);z-index:2">Product</th>' +
+    CAL_MONTHS.map(m => `<th style="text-align:center;min-width:90px">${m} 2026</th>`).join('');
+  // Body
+  const tbody = document.getElementById('calendar-tbody');
+  tbody.innerHTML = data.products.map(prod => {
+    const cells = CAL_MONTHS.map((m,i) => {
+      const key = prod+'||'+i;
+      const c = data.cells[key];
+      const hasC = c && (c.text||'').trim();
+      const dot = hasC ? '<span title="Has comment" style="display:inline-block;width:8px;height:8px;border-radius:99px;background:var(--blue-500)"></span>' : '<span style="color:var(--text-muted);font-size:0.8rem">–</span>';
+      return `<td style="text-align:center;cursor:pointer" onclick="openCalendarCell('${prod.replace(/'/g,"\\'")}', ${i})">${dot}</td>`;
+    }).join('');
+    const del = isField ? '' : `<button class="btn btn-secondary btn-sm officer-only" style="margin-left:6px;padding:2px 6px" onclick="event.stopPropagation();removeCalendarProduct('${prod.replace(/'/g,"\\'")}')" title="Remove">✕</button>`;
+    return `<tr><td style="font-weight:600;position:sticky;left:0;background:var(--surface)">${prod}${del}</td>${cells}</tr>`;
+  }).join('');
+}
+
+function openCalendarCell(prod, monthIdx) {
+  const data = _calData();
+  const key = prod+'||'+monthIdx;
+  const c = data.cells[key] || {};
+  _calEditKey = key;
+  document.getElementById('modal-cal-title').textContent = `${prod} — ${CAL_MONTHS[monthIdx]} 2026`;
+  document.getElementById('cal-meta').textContent = c.by ? `Last updated by ${c.by} · ${new Date(c.at).toLocaleString()}` : 'No comment yet.';
+  const ta = document.getElementById('cal-comment');
+  ta.value = c.text || '';
+  const isField = currentRole === 'field';
+  ta.readOnly = isField;
+  ta.placeholder = isField ? 'Only QC Officers can edit comments.' : 'Add a comment...';
+  document.getElementById('modal-cal').classList.add('open');
+}
+
+function saveCalendarComment() {
+  if (currentRole === 'field') return;
+  if (!_calEditKey) return;
+  const data = _calData();
+  const text = document.getElementById('cal-comment').value.trim();
+  if (!text) { delete data.cells[_calEditKey]; }
+  else { data.cells[_calEditKey] = { text, by: currentUser, at: new Date().toISOString() }; }
+  saveDemoData();
+  closeModal('cal');
+  renderCalendarTable();
+  showToast('Comment saved','success');
+}
+
+function addCalendarProduct() {
+  if (currentRole === 'field') return;
+  const name = (prompt('New product name:')||'').trim();
+  if (!name) return;
+  const data = _calData();
+  if (data.products.includes(name)) { showToast('Product already exists','error'); return; }
+  data.products.push(name);
+  saveDemoData();
+  renderCalendarTable();
+}
+
+function removeCalendarProduct(name) {
+  if (currentRole === 'field') return;
+  if (!confirm(`Remove product "${name}" from calendar?`)) return;
+  const data = _calData();
+  data.products = data.products.filter(p => p !== name);
+  Object.keys(data.cells).forEach(k => { if (k.startsWith(name+'||')) delete data.cells[k]; });
+  saveDemoData();
+  renderCalendarTable();
+}
+
+// Hook calendar render into training page load
+const _origLoadTraining = loadTrainingPage;
+loadTrainingPage = async function() {
+  await _origLoadTraining();
+  renderCalendarTable();
+};
+
+/* ── ANNOUNCEMENTS PAGE ─────────────────────────────────── */
+async function loadAnnouncePage() {
+  const list = await dbGet('announcements');
+  const sorted = [...list].sort((a,b) => new Date(b.posted_at||b.last_updated_at||0) - new Date(a.posted_at||a.last_updated_at||0));
+  const wrap = document.getElementById('announce-list');
+  const empty = document.getElementById('announce-empty');
+  if (!sorted.length) { wrap.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+  wrap.innerHTML = sorted.map(a => `
+    <div style="border:1px solid var(--border);border-left:4px solid var(--green);border-radius:10px;padding:14px;background:#f0fdf4">
+      <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start">
+        <div style="font-weight:700;color:var(--text);font-size:1.05rem">${(a.title||'(untitled)')}</div>
+        <div style="font-size:0.78rem;color:var(--text-muted);white-space:nowrap">${new Date(a.posted_at||a.last_updated_at||Date.now()).toLocaleString()}</div>
+      </div>
+      <div style="margin-top:6px;color:var(--text-2);white-space:pre-wrap">${(a.message||'')}</div>
+      <div style="margin-top:8px;font-size:0.8rem;color:var(--text-muted)">Posted by ${a.posted_by||'—'}</div>
+    </div>
+  `).join('');
+  // Mark as seen
+  try { localStorage.setItem('qcboard_announce_seen_'+currentUser, new Date().toISOString()); } catch(e){}
+  const badge = document.getElementById('badge-announce');
+  if (badge) badge.style.display='none';
+}
+
 </script>
 </body>
 </html>
