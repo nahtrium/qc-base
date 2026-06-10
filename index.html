@@ -1051,52 +1051,6 @@
     .profile-grid { grid-template-columns: repeat(2, 140px); gap: 10px; }
     .profile-logo { font-size: 1.8rem; }
   }
-  /* ── PRODUCTION SCHEDULE MATRIX ───────────────────────────── */
-  .sched-table { min-width: 820px; }
-  .sched-table th, .sched-table td { text-align: center; padding: 8px 6px; font-size: 0.8rem; }
-  .sched-table th { background: var(--blue-50); color: var(--blue-800); font-weight: 700; font-size: 0.75rem; }
-  .sched-product-col { text-align: left !important; min-width: 140px; font-weight: 700; }
-  .sched-del-col { width: 36px; }
-  .sched-cell {
-    width: 52px; height: 38px; border-radius: 6px;
-    border: 1.5px dashed var(--border); background: transparent;
-    cursor: pointer; transition: all 0.15s; position: relative;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1rem; margin: auto;
-  }
-  .sched-cell:hover { border-color: var(--blue-400); background: var(--blue-50); }
-  .sched-cell.has-comment {
-    border-style: solid; border-color: var(--blue-400);
-    background: var(--blue-50);
-  }
-  .sched-cell.has-comment::after {
-    content: '';
-    position: absolute; top: 3px; right: 3px;
-    width: 6px; height: 6px; border-radius: 50%;
-    background: var(--blue-500);
-  }
-  .sched-cell-icon { font-size: 0.85rem; line-height: 1; }
-  .sched-product-name { font-weight: 600; font-size: 0.85rem; text-align: left; }
-
-  /* Comment tooltip preview */
-  .sched-cell[data-preview]:hover::before {
-    content: attr(data-preview);
-    position: absolute; bottom: calc(100% + 6px); left: 50%;
-    transform: translateX(-50%);
-    background: #1e293b; color: #fff;
-    font-size: 0.7rem; border-radius: 6px;
-    padding: 5px 9px; white-space: nowrap;
-    max-width: 200px; overflow: hidden; text-overflow: ellipsis;
-    pointer-events: none; z-index: 300;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-  }
-  .sched-cell[data-preview]:hover::after {
-    bottom: calc(100% + 2px);
-    background: #1e293b;
-    width: 7px; height: 7px;
-    top: auto; left: 50%; transform: translateX(-50%) rotate(45deg);
-    border-radius: 1px; z-index: 299;
-  }
   </style>
 </head>
 <body>
@@ -1346,70 +1300,6 @@
           <div id="training-empty" class="empty-state" style="display:none">
             <div class="empty-icon">📅</div>
             <p>No training records yet. Add your first training!</p>
-          </div>
-        </div>
-
-        <!-- ── PRODUCTION SCHEDULE MATRIX ────────────────────── -->
-        <div class="card" style="margin-top:24px">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
-            <div>
-              <div class="card-title" style="margin:0">📆 Production Schedule 2026</div>
-              <div style="font-size:0.78rem;color:var(--text-muted);margin-top:2px">Click any cell to add a comment. Officers can add products.</div>
-            </div>
-            <button class="btn btn-primary btn-sm officer-only" onclick="openAddProductModal()" style="white-space:nowrap">+ Add Product</button>
-          </div>
-          <div class="table-wrap">
-            <table id="sched-table" class="sched-table">
-              <thead>
-                <tr>
-                  <th class="sched-product-col">Product</th>
-                  <th>Jan</th><th>Feb</th><th>Mar</th><th>Apr</th>
-                  <th>May</th><th>Jun</th><th>Jul</th><th>Aug</th>
-                  <th>Sep</th><th>Oct</th><th>Nov</th><th>Dec</th>
-                  <th class="officer-only sched-del-col"></th>
-                </tr>
-              </thead>
-              <tbody id="sched-tbody"></tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- Add Product Modal inline -->
-        <div class="modal-overlay" id="modal-addproduct">
-          <div class="modal" style="max-width:380px">
-            <div class="modal-header">
-              <div class="modal-title">Add Product</div>
-              <div class="modal-close" onclick="closeModal('addproduct')">✕</div>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Product Name *</label>
-              <input class="form-input" id="new-product-name" placeholder="e.g. Sambal Matah">
-            </div>
-            <div class="form-actions">
-              <button class="btn btn-secondary" onclick="closeModal('addproduct')">Cancel</button>
-              <button class="btn btn-primary" onclick="addSchedProduct()">Add</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Cell Comment Modal -->
-        <div class="modal-overlay" id="modal-cell-comment">
-          <div class="modal" style="max-width:400px">
-            <div class="modal-header">
-              <div class="modal-title" id="cell-comment-title">Add Comment</div>
-              <div class="modal-close" onclick="closeModal('cell-comment')">✕</div>
-            </div>
-            <input type="hidden" id="cell-comment-key">
-            <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:10px" id="cell-comment-meta"></div>
-            <div class="form-group">
-              <label class="form-label">Comment</label>
-              <textarea class="form-input form-textarea" id="cell-comment-text" rows="4" placeholder="e.g. Production paused — raw material delayed"></textarea>
-            </div>
-            <div class="form-actions" id="cell-comment-actions">
-              <button class="btn btn-secondary" onclick="closeModal('cell-comment')">Cancel</button>
-              <button class="btn btn-danger btn-sm officer-only" id="cell-comment-del-btn" onclick="deleteCellComment()" style="display:none">Delete</button>
-              <button class="btn btn-primary officer-only" onclick="saveCellComment()">Save</button>
-            </div>
           </div>
         </div>
       </div>
@@ -1822,9 +1712,7 @@ let demoData = {
   product_specifications: [],
   trial_reports: [],
   sop_documents: [],
-  announcements: [],
-  sched_products: [],
-  sched_comments: []
+  announcements: []
 };
 
 function initSupabase() {
@@ -1901,11 +1789,16 @@ let pendingProfile = null;
 function selectProfile(name, role, color) {
   if (role === 'officer') {
     pendingProfile = { name, role, color };
-    document.getElementById('pw-input').value = '';
-    document.getElementById('pw-error').textContent = '';
-    document.getElementById('pw-title').textContent = `Sign in as ${name}`;
-    document.getElementById('pw-overlay').classList.add('active');
-    setTimeout(() => document.getElementById('pw-input').focus(), 50);
+    const pwInput = document.getElementById('pw-input');
+    const pwError = document.getElementById('pw-error');
+    const pwTitle = document.getElementById('pw-title');
+    const pwOverlay = document.getElementById('pw-overlay');
+    if (!pwOverlay) { console.error('pw-overlay missing'); return; }
+    if (pwInput) pwInput.value = '';
+    if (pwError) pwError.textContent = '';
+    if (pwTitle) pwTitle.textContent = `Sign in as ${name}`;
+    pwOverlay.classList.add('active');
+    setTimeout(() => { if (pwInput) pwInput.focus(); }, 50);
     return;
   }
   enterApp(name, role, color);
@@ -1960,14 +1853,21 @@ function switchProfile() {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
+  // Valid names after profile consolidation
+  const validNames = ['Nashir','Gina','Lussy','Bianca','QC Field'];
   const raw = localStorage.getItem('qcboard_user');
   if (raw) {
     try {
       const v = JSON.parse(raw);
-      if (v && v.name && profileColors[v.name]) {
+      if (v && v.name && validNames.includes(v.name)) {
         enterApp(v.name, v.role || profileRoles[v.name], profileColors[v.name]);
+      } else {
+        // Stale or unknown name — clear it so the profile picker shows cleanly
+        localStorage.removeItem('qcboard_user');
       }
-    } catch {}
+    } catch {
+      localStorage.removeItem('qcboard_user');
+    }
   }
   updateTopbarDate();
 });
@@ -2166,14 +2066,8 @@ function showPage(name, el) {
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 async function dbGet(table) {
   if (DEMO_MODE) return demoData[table] || [];
-  const orderCols = {
-    announcements: 'posted_at',
-    sched_products: 'sort_order',
-    sched_comments: 'updated_at',
-  };
-  const col = orderCols[table] || 'last_updated_at';
-  const { data, error } = await db.from(table).select('*').order(col, { ascending: col === 'sort_order' });
-  if (error) { showToast(`DB read error (${table}): ${error.message}`, 'error'); return []; }
+  const { data, error } = await db.from(table).select('*').order('last_updated_at', { ascending:false });
+  if (error) { showToast('DB read error: '+error.message, 'error'); return []; }
   return data || [];
 }
 
@@ -2306,7 +2200,6 @@ let trainings = [];
 async function loadTrainingPage() {
   trainings = await dbGet('training_schedules');
   renderTrainingTable();
-  loadSchedMatrix();
 }
 
 function renderTrainingTable() {
@@ -2351,184 +2244,6 @@ function renderTrainingTable() {
   }).join('');
 }
 
-}
-
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   PRODUCTION SCHEDULE MATRIX
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-const SCHED_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-const SCHED_DEFAULT_PRODUCTS = ['Mentai Sauce','Sambal Korek'];
-const SCHED_STORAGE_KEY = 'qcboard_sched_2026';
-
-// Structure stored in Supabase table `production_schedule`
-// Each row: { id, product_name, cell_key (e.g. "Mentai Sauce__Mar"), comment, updated_by, updated_at }
-// Products list stored in `sched_products` table: { id, product_name, sort_order }
-
-let schedProducts = []; // ordered list of product names
-let schedComments = {}; // key → { id, comment, updated_by, updated_at }
-
-async function loadSchedMatrix() {
-  // Load products
-  const prodRows = await dbGet('sched_products');
-  if (prodRows.length) {
-    schedProducts = prodRows
-      .sort((a,b) => (a.sort_order||0) - (b.sort_order||0))
-      .map(r => r.product_name);
-  } else {
-    // Seed defaults if none exist
-    schedProducts = [...SCHED_DEFAULT_PRODUCTS];
-    for (let i = 0; i < SCHED_DEFAULT_PRODUCTS.length; i++) {
-      await dbInsert('sched_products', { product_name: SCHED_DEFAULT_PRODUCTS[i], sort_order: i });
-    }
-  }
-  // Load cell comments
-  const commentRows = await dbGet('sched_comments');
-  schedComments = {};
-  commentRows.forEach(r => { schedComments[r.cell_key] = r; });
-  renderSchedMatrix();
-}
-
-function renderSchedMatrix() {
-  const tbody = document.getElementById('sched-tbody');
-  if (!tbody) return;
-  tbody.innerHTML = schedProducts.map(prod => {
-    const cells = SCHED_MONTHS.map((mon, mi) => {
-      const key = `${prod}__${mon}`;
-      const rec = schedComments[key];
-      const hasComment = rec && rec.comment;
-      const preview = hasComment ? rec.comment.slice(0, 40) + (rec.comment.length > 40 ? '…' : '') : '';
-      const dataPreview = hasComment ? `data-preview="${preview.replace(/"/g,"'")}"` : '';
-      return `<td>
-        <div class="sched-cell${hasComment ? ' has-comment' : ''}"
-          ${dataPreview}
-          onclick="openCellComment('${prod.replace(/'/g,"\\'")}','${mon}')">
-          ${hasComment ? '<span class="sched-cell-icon">💬</span>' : ''}
-        </div>
-      </td>`;
-    }).join('');
-    const delBtn = currentRole === 'officer'
-      ? `<td class="officer-only"><button class="ann-action-btn del" style="padding:3px 7px;font-size:0.72rem" onclick="deleteSchedProduct('${prod.replace(/'/g,"\\'")}')">🗑</button></td>`
-      : '<td class="officer-only"></td>';
-    return `<tr>
-      <td class="sched-product-col sched-product-name">${prod}</td>
-      ${cells}
-      ${delBtn}
-    </tr>`;
-  }).join('');
-
-  // Hide officer-only columns for field
-  if (currentRole === 'field') {
-    document.querySelectorAll('#sched-tbody .officer-only').forEach(el => el.style.display = 'none');
-    const delHead = document.querySelector('#sched-table thead .sched-del-col');
-    if (delHead) delHead.style.display = 'none';
-  }
-}
-
-function openAddProductModal() {
-  if (blockIfField()) return;
-  document.getElementById('new-product-name').value = '';
-  openModal('addproduct');
-  setTimeout(() => document.getElementById('new-product-name').focus(), 50);
-}
-
-async function addSchedProduct() {
-  if (blockIfField()) return;
-  const name = document.getElementById('new-product-name').value.trim();
-  if (!name) { showToast('Product name is required', 'error'); return; }
-  if (schedProducts.includes(name)) { showToast('Product already exists', 'warning'); return; }
-  const sortOrder = schedProducts.length;
-  const saved = await dbInsert('sched_products', { product_name: name, sort_order: sortOrder });
-  if (saved) {
-    schedProducts.push(name);
-    showToast(`"${name}" added!`, 'success');
-    closeModal('addproduct');
-    renderSchedMatrix();
-  }
-}
-
-async function deleteSchedProduct(prod) {
-  if (blockIfField()) return;
-  if (!confirm(`Remove "${prod}" from the schedule? Comments for this product will also be deleted.`)) return;
-  // Delete product row
-  const prodRows = await dbGet('sched_products');
-  const row = prodRows.find(r => r.product_name === prod);
-  if (row) await dbDelete('sched_products', row.id);
-  // Delete all comments for this product
-  const commentRows = await dbGet('sched_comments');
-  for (const r of commentRows.filter(c => c.cell_key.startsWith(prod + '__'))) {
-    await dbDelete('sched_comments', r.id);
-    delete schedComments[r.cell_key];
-  }
-  schedProducts = schedProducts.filter(p => p !== prod);
-  showToast(`"${prod}" removed`, 'success');
-  renderSchedMatrix();
-}
-
-function openCellComment(prod, mon) {
-  const key = `${prod}__${mon}`;
-  const rec = schedComments[key];
-  document.getElementById('cell-comment-key').value = key;
-  document.getElementById('cell-comment-title').textContent = `${prod} — ${mon} 2026`;
-  document.getElementById('cell-comment-meta').textContent = rec
-    ? `Last updated by ${rec.updated_by||'—'} · ${fmtDateTime(rec.updated_at)}`
-    : 'No comment yet.';
-  document.getElementById('cell-comment-text').value = rec ? rec.comment : '';
-  document.getElementById('cell-comment-text').disabled = currentRole !== 'officer';
-
-  // Show/hide delete and save buttons
-  const delBtn = document.getElementById('cell-comment-del-btn');
-  if (delBtn) delBtn.style.display = (rec && currentRole === 'officer') ? '' : 'none';
-
-  const actionsEl = document.getElementById('cell-comment-actions');
-  // For field users, show only Close
-  if (currentRole === 'field') {
-    actionsEl.innerHTML = `<button class="btn btn-secondary" onclick="closeModal('cell-comment')">Close</button>`;
-  } else {
-    actionsEl.innerHTML = `
-      <button class="btn btn-secondary" onclick="closeModal('cell-comment')">Cancel</button>
-      ${rec ? '<button class="btn btn-danger btn-sm" onclick="deleteCellComment()">Delete</button>' : ''}
-      <button class="btn btn-primary" onclick="saveCellComment()">Save</button>`;
-  }
-  openModal('cell-comment');
-  if (currentRole === 'officer') setTimeout(() => document.getElementById('cell-comment-text').focus(), 60);
-}
-
-async function saveCellComment() {
-  if (blockIfField()) return;
-  const key   = document.getElementById('cell-comment-key').value;
-  const text  = document.getElementById('cell-comment-text').value.trim();
-  if (!text) { showToast('Comment cannot be empty', 'error'); return; }
-  const existing = schedComments[key];
-  const row = {
-    cell_key: key,
-    comment: text,
-    updated_by: currentUser,
-    updated_at: new Date().toISOString()
-  };
-  if (existing) {
-    await dbUpdate('sched_comments', existing.id, row);
-  } else {
-    const saved = await dbInsert('sched_comments', row);
-    if (saved) row.id = saved.id;
-  }
-  schedComments[key] = { ...existing, ...row };
-  showToast('Comment saved!', 'success');
-  closeModal('cell-comment');
-  renderSchedMatrix();
-}
-
-async function deleteCellComment() {
-  if (blockIfField()) return;
-  const key = document.getElementById('cell-comment-key').value;
-  const existing = schedComments[key];
-  if (!existing) return;
-  await dbDelete('sched_comments', existing.id);
-  delete schedComments[key];
-  showToast('Comment deleted', 'success');
-  closeModal('cell-comment');
-  renderSchedMatrix();
-}
-
 function openModal(type, id) {
   document.getElementById('modal-'+type).classList.add('open');
 }
@@ -2540,8 +2255,6 @@ function closeModal(type) {
   if (type==='specs') { ['sp-id','sp-product','sp-revision','sp-date','sp-approved','sp-link','sp-summary'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; }); document.getElementById('modal-specs-title').textContent='Add Specification'; }
   if (type==='trials') { ['tr-id','tr-product','tr-date','tr-assigned','tr-link','tr-notes'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; }); document.getElementById('tr-ai-area').style.display='none'; document.getElementById('modal-trials-title').textContent='Add Trial Report'; }
   if (type==='announce') { ['an-title','an-message'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; }); }
-  if (type==='addproduct') { const el=document.getElementById('new-product-name'); if(el) el.value=''; }
-  if (type==='cell-comment') { const el=document.getElementById('cell-comment-text'); if(el) el.value=''; }
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
