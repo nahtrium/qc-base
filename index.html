@@ -890,6 +890,18 @@
   }
   .mention-chip .rm { cursor:pointer; opacity:0.6; font-size:0.85rem; line-height:1; }
   .mention-chip .rm:hover { opacity:1; color:var(--red); }
+  .emp-chip {
+    display: inline-flex; align-items: center;
+    background: var(--surface); color: var(--text-muted);
+    border: 1.5px solid var(--border); border-radius: 20px;
+    padding: 4px 12px; font-size: 0.8rem; font-weight: 600;
+    cursor: pointer; transition: all 0.15s; user-select: none;
+  }
+  .emp-chip.selected {
+    background: var(--blue-100); color: var(--blue-800);
+    border-color: var(--blue-400);
+  }
+  .emp-chip:hover { border-color: var(--blue-400); color: var(--blue-800); }
   .mention-dd-item {
     padding: 9px 14px; cursor: pointer; font-size: 0.85rem;
     display: flex; align-items: center; gap: 8px;
@@ -1151,11 +1163,8 @@
       <div class="nav-item" onclick="showPage('specs',this)">
         <span class="nav-icon">📋</span> Product Specs
       </div>
-      <div class="nav-item officer-only" onclick="showPage('trials',this)">
-        <span class="nav-icon">🧪</span> Trial Reports
-      </div>
-      <div class="nav-item" onclick="showPage('sop',this)">
-        <span class="nav-icon">📄</span> SOP
+      <div class="nav-item officer-only" onclick="showPage('calendar',this)">
+        <span class="nav-icon">📆</span> Calendar
       </div>
     </nav>
     <div class="sidebar-footer">
@@ -1252,11 +1261,7 @@
           <div id="dash-todos"><div class="loading"><div class="spinner"></div></div></div>
         </div>
 
-        <!-- Trial Reports (officer only) -->
-        <div class="card officer-only" id="dash-trials-card">
-          <div class="card-title">🧪 Latest Trial Reports</div>
-          <div id="dash-trials"><div class="loading"><div class="spinner"></div></div></div>
-        </div>
+        <!-- Trial Reports section removed (replaced by Calendar) -->
       </div>
 
       <!-- ── TRAINING SCHEDULE PAGE ─────────────────────────── -->
@@ -1339,6 +1344,16 @@
             <p>Broadcasts from QC Officers to the whole team.</p>
           </div>
           <button class="btn btn-primary officer-only" onclick="openAnnounceModal()">+ New Announcement</button>
+        </div>
+        <div class="filter-bar">
+          <input class="filter-input" type="text" id="announce-search" placeholder="🔍 Search announcements..." oninput="renderAnnouncePage()">
+          <select class="filter-select" id="announce-author-filter" onchange="renderAnnouncePage()">
+            <option value="">All Officers</option>
+            <option value="Nashir">Nashir</option>
+            <option value="Gina">Gina</option>
+            <option value="Lussy">Lussy</option>
+            <option value="Bianca">Bianca</option>
+          </select>
         </div>
         <div class="card">
           <div id="announce-list" style="display:flex;flex-direction:column;gap:12px;padding:8px"></div>
@@ -1434,51 +1449,47 @@
         </div>
       </div>
 
-      <!-- ── TRIAL REPORTS PAGE ──────────────────────────────── -->
-      <div id="page-trials" class="page">
+      <!-- ── CALENDAR PAGE ──────────────────────────────────── -->
+      <div id="page-calendar" class="page">
         <div class="page-header">
           <div>
-            <h1>Trial Reports</h1>
-            <p>Log trial reports with AI-powered summaries</p>
+            <h1>📆 Calendar</h1>
+            <p>Events, urgent to-dos, and trainings — all in one view.</p>
           </div>
-          <button class="btn btn-primary officer-only" onclick="openModal('trials')">+ Add Report</button>
+          <div style="display:flex;gap:8px;align-items:center">
+            <button class="btn btn-secondary btn-sm" onclick="calNav(-1)">&#8249; Prev</button>
+            <span id="cal-month-label" style="font-weight:700;color:var(--blue-800);min-width:130px;text-align:center;font-size:1rem"></span>
+            <button class="btn btn-secondary btn-sm" onclick="calNav(1)">Next &#8250;</button>
+            <button class="btn btn-secondary btn-sm" onclick="calGoToday()">Today</button>
+          </div>
+          <button class="btn btn-primary officer-only" onclick="openCalEventModal()">+ Add Event</button>
         </div>
-        <div class="card">
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Product</th>
-                  <th>Trial Date</th>
-                  <th>Assigned To</th>
-                  <th>AI Summary</th>
-                  <th>Notes</th>
-                  <th>File</th>
-                  <th>Updated By</th>
-                  <th class="officer-only">Actions</th>
-                </tr>
-              </thead>
-              <tbody id="trials-tbody"></tbody>
-            </table>
+        <!-- Legend -->
+        <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px;font-size:0.78rem;font-weight:600">
+          <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:3px;background:#ef4444;display:inline-block"></span>Urgent / Overdue</span>
+          <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:3px;background:#f59e0b;display:inline-block"></span>To-Do</span>
+          <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:3px;background:#3b82f6;display:inline-block"></span>Training</span>
+          <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:3px;background:#22c55e;display:inline-block"></span>Announcement</span>
+          <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:3px;background:#a855f7;display:inline-block"></span>Event</span>
+        </div>
+        <div class="card" style="padding:0;overflow:hidden">
+          <div id="cal-grid-wrap" style="overflow-x:auto">
+            <div id="cal-grid" style="min-width:700px"></div>
           </div>
-          <div id="trials-empty" class="empty-state" style="display:none">
-            <div class="empty-icon">🧪</div>
-            <p>No trial reports yet. Add your first report!</p>
+        </div>
+        <!-- Day detail panel -->
+        <div id="cal-day-panel" style="display:none;margin-top:16px">
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+              <div class="card-title" id="cal-day-panel-title">Events on …</div>
+              <button onclick="document.getElementById('cal-day-panel').style.display='none'" style="background:none;border:none;font-size:1.2rem;color:var(--text-muted);cursor:pointer">✕</button>
+            </div>
+            <div id="cal-day-panel-list"></div>
           </div>
         </div>
       </div>
-      <!-- ── SOP PAGE ──────────────────────────────────────── -->
-      <div id="page-sop" class="page">
-        <div class="page-header">
-          <div>
-            <h1>SOP</h1>
-            <p>Standard Operating Procedures — Google Drive documents</p>
-          </div>
-        </div>
-        <div class="sop-grid" id="sop-grid">
-          <!-- Rendered by JS -->
-        </div>
-      </div>
+      <!-- ── SOP PAGE (hidden, kept for Supabase compat) ──────── -->
+      <div id="page-sop" class="page" style="display:none!important"></div>
 
     </div><!-- /page-content -->
   </main>
@@ -1497,13 +1508,14 @@
     </div>
     <input type="hidden" id="t-id">
     <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">Employee *</label>
-        <select class="form-input" id="t-employee">
-          <option value="">Select employee</option>
-          <option>Gerrie</option><option>Rio</option>
-          <option>Syahdan</option><option>Putri</option>
-        </select>
+      <div class="form-group" style="flex:1">
+        <label class="form-label">Employee(s) * <span style="font-weight:400;color:var(--text-muted)">(select one or more)</span></label>
+        <div id="t-employee-chips" style="display:flex;flex-wrap:wrap;gap:7px;padding:8px 10px;border:1.5px solid var(--border);border-radius:var(--radius);background:var(--surface);cursor:pointer;min-height:42px;align-items:center">
+          <span class="emp-chip" data-name="Gerrie" onclick="toggleEmpChip(this)">Gerrie</span>
+          <span class="emp-chip" data-name="Rio" onclick="toggleEmpChip(this)">Rio</span>
+          <span class="emp-chip" data-name="Syahdan" onclick="toggleEmpChip(this)">Syahdan</span>
+          <span class="emp-chip" data-name="Putri" onclick="toggleEmpChip(this)">Putri</span>
+        </div>
       </div>
       <div class="form-group">
         <label class="form-label">Trainer</label>
@@ -1745,6 +1757,49 @@
   </div>
 </div>
 
+<!-- Calendar Event Modal -->
+<div class="modal-overlay" id="modal-calevent">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-calevent-title">📆 Add Event</div>
+      <div class="modal-close" onclick="closeModal('calevent')">✕</div>
+    </div>
+    <input type="hidden" id="ce-id">
+    <div class="form-group">
+      <label class="form-label">Event Title *</label>
+      <input class="form-input" id="ce-title" placeholder="e.g. Internal Audit, Lab Inspection">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Date *</label>
+        <input class="form-input" type="date" id="ce-date">
+      </div>
+      <div class="form-group">
+        <label class="form-label">End Date (optional)</label>
+        <input class="form-input" type="date" id="ce-end-date">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Type</label>
+      <select class="form-input" id="ce-type">
+        <option value="event">📆 Event</option>
+        <option value="urgent">🔴 Urgent</option>
+        <option value="todo">🟡 To-Do</option>
+        <option value="training">🔵 Training</option>
+        <option value="announce">🟢 Announcement</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Notes</label>
+      <textarea class="form-input form-textarea" id="ce-notes" placeholder="Additional notes..." rows="3"></textarea>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="closeModal('calevent')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveCalEvent()">Save Event</button>
+    </div>
+  </div>
+</div>
+
 <!-- Toast Container -->
 <div id="toast-container"></div>
 
@@ -1957,18 +2012,17 @@ async function onGlobalSearch() {
   const q = document.getElementById('global-search').value.trim().toLowerCase();
   const box = document.getElementById('search-results');
   if (!q) { box.classList.remove('active'); box.innerHTML = ''; return; }
-  const [trainings, todosAll, specsAll, trialsAll, announcementsAll] = await Promise.all([
+  const [trainings, todosAll, specsAll, announcementsAll] = await Promise.all([
     dbGet('training_schedules'), dbGet('todos'),
-    dbGet('product_specifications'), dbGet('trial_reports'), dbGet('announcements')
+    dbGet('product_specifications'), dbGet('announcements')
   ]);
   const matches = {
     announce: announcementsAll.filter(a => ((a.title||'')+' '+(a.message||'')+' '+(a.posted_by||'')).toLowerCase().includes(q)),
     todo: todosAll.filter(t => (t.task_title+' '+(t.notes||'')+' '+(t.assigned_person||'')).toLowerCase().includes(q)),
     specs: specsAll.filter(s => (s.product_name+' '+(s.summary||'')+' '+(s.revision_number||'')).toLowerCase().includes(q)),
-    trials: trialsAll.filter(r => (r.product_name+' '+(r.notes||'')+' '+(r.ai_summary||'')).toLowerCase().includes(q)),
     training: trainings.filter(t => (t.training_topic+' '+(t.employee_name||'')+' '+(t.trainer||'')).toLowerCase().includes(q))
   };
-  const total = matches.announce.length + matches.todo.length + matches.specs.length + matches.trials.length + matches.training.length;
+  const total = matches.announce.length + matches.todo.length + matches.specs.length + matches.training.length;
   if (!total) {
     box.innerHTML = '<div class="search-ai">No matches for <strong>'+q+'</strong></div>';
     box.classList.add('active'); return;
@@ -1983,7 +2037,6 @@ async function onGlobalSearch() {
     ${section('Announcements','📢', matches.announce, ic => a => `<div class="search-item"><span class="search-item-icon">${ic}</span><div><div class="search-item-title">${a.title||'(untitled)'}</div><div class="search-item-meta">${(a.message||'').slice(0,80)} · by ${a.posted_by||'—'}</div></div></div>`)}
     ${section('To-Do List','✅', matches.todo, ic => t => `<div class="search-item"><span class="search-item-icon">${ic}</span><div><div class="search-item-title">${t.task_title}</div><div class="search-item-meta">${t.priority||''} · ${t.assigned_person||'—'}</div></div></div>`)}
     ${section('Product Specs','📋', matches.specs, ic => s => `<div class="search-item"><span class="search-item-icon">${ic}</span><div><div class="search-item-title">${s.product_name} <span class="search-item-meta">(${s.revision_number||'—'})</span></div><div class="search-item-meta">${s.summary||''}</div></div></div>`)}
-    ${section('Trial Reports','🧪', matches.trials, ic => r => `<div class="search-item"><span class="search-item-icon">${ic}</span><div><div class="search-item-title">${r.product_name}</div><div class="search-item-meta">${(r.ai_summary||r.notes||'').slice(0,80)}</div></div></div>`)}
     ${section('Training','📅', matches.training, ic => t => `<div class="search-item"><span class="search-item-icon">${ic}</span><div><div class="search-item-title">${t.training_topic}</div><div class="search-item-meta">${t.employee_name||'—'} · ${t.status||''}</div></div></div>`)}
   `;
   box.classList.add('active');
@@ -1994,7 +2047,6 @@ async function onGlobalSearch() {
       const items = [
         ...matches.todo.slice(0,5).map(t => ({type:'todo', title:t.task_title, detail:t.notes||''})),
         ...matches.specs.slice(0,5).map(s => ({type:'spec', title:`${s.product_name} ${s.revision_number||''}`, detail:s.summary||''})),
-        ...matches.trials.slice(0,5).map(r => ({type:'trial', title:r.product_name, detail:r.ai_summary||r.notes||''})),
         ...matches.training.slice(0,5).map(t => ({type:'training', title:t.training_topic, detail:t.employee_name||''}))
       ];
       const res = await fetch('/api/public/ai-summarize', {
@@ -2040,7 +2092,7 @@ async function renderNotifPanel() {
   const myTasks = isField
     ? todosAll.filter(t => !t.completion_status && (t.mentions||'').toLowerCase().includes('qc field'))
     : todosAll.filter(t => t.assigned_person === me && !t.completion_status);
-  const myTrainings = isField ? [] : trainings.filter(t => t.employee_name === me);
+  const myTrainings = isField ? [] : trainings.filter(t => t.employee_name.split(',').map(n=>n.trim()).includes(me));
   const recentSpecs = [...specsAll].sort((a,b) => new Date(b.last_updated_at||0) - new Date(a.last_updated_at||0)).slice(0, 5);
   const recentAnnouncements = [...announcementsAll].sort((a,b) => new Date(b.posted_at||b.last_updated_at||0) - new Date(a.posted_at||a.last_updated_at||0));
 
@@ -2098,8 +2150,8 @@ function updateTopbarDate() {
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 const pageNames = {
   dashboard:'Dashboard', training:'Training Schedule',
-  todo:'To-Do List', specs:'Product Specifications', trials:'Trial Reports',
-  sop:'SOP', announce:'Announcements', calendar:'Sensory Training Schedule'
+  todo:'To-Do List', specs:'Product Specifications',
+  announce:'Announcements', calendar:'Calendar'
 };
 
 function showPage(name, el) {
@@ -2113,9 +2165,8 @@ function showPage(name, el) {
   else if (name === 'training') loadTrainingPage();
   else if (name === 'todo') loadTodoPage();
   else if (name === 'specs') loadSpecsPage();
-  else if (name === 'trials') loadTrialsPage();
-  else if (name === 'sop') loadSOPPage();
   else if (name === 'announce') loadAnnouncePage();
+  else if (name === 'calendar') loadCalendarPage();
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -2167,9 +2218,9 @@ async function dbDelete(table, id) {
    DASHBOARD
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 async function loadDashboard() {
-  const [trainings, todos, specs, trials] = await Promise.all([
+  const [trainings, todos, specs] = await Promise.all([
     dbGet('training_schedules'), dbGet('todos'),
-    dbGet('product_specifications'), dbGet('trial_reports')
+    dbGet('product_specifications')
   ]);
 
   const today = new Date(); today.setHours(0,0,0,0);
@@ -2186,8 +2237,6 @@ async function loadDashboard() {
   document.getElementById('stat-todo').textContent = openTodos;
   document.getElementById('stat-todo-sub').textContent = overdueTodos + ' overdue';
   document.getElementById('stat-specs').textContent = specs.length;
-
-  // Badges
   const trainingBadge = document.getElementById('badge-training');
   if (overdueTrain > 0) { trainingBadge.textContent = overdueTrain; trainingBadge.style.display = ''; }
   const todoBadge = document.getElementById('badge-todo');
@@ -2235,18 +2284,6 @@ async function loadDashboard() {
       <div style="flex:1"><div class="recent-text">${t.task_title}</div>
       <div class="recent-meta">${priorityBadge(t.priority)} ${t.assigned_person ? '· '+t.assigned_person:''} · Due: ${fmtDate(t.deadline)}</div></div></div>`).join('') :
     `<div class="empty-state" style="padding:24px"><p>No urgent tasks 🎉</p></div>`;
-
-  // Trials table (officer only)
-  document.getElementById('dash-trials').innerHTML = trials.length ? `<div class="table-wrap"><table>
-    <thead><tr><th>Product</th><th>Date</th><th>Assigned</th><th>AI Summary</th><th>Updated By</th></tr></thead>
-    <tbody>${trials.slice(0,4).map(r=>`<tr>
-      <td><strong>${r.product_name}</strong></td>
-      <td class="td-muted">${fmtDate(r.trial_date)}</td>
-      <td>${r.assigned_person||'—'}</td>
-      <td style="max-width:280px;font-size:0.78rem">${r.ai_summary ? r.ai_summary.slice(0,100)+'…' : '<span class="td-muted">No summary</span>'}</td>
-      <td class="td-muted">${r.last_updated_by||'—'}</td>
-    </tr>`).join('')}</tbody></table></div>` :
-    `<div class="empty-state" style="padding:24px"><p>No trial reports yet</p></div>`;
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -2268,7 +2305,7 @@ function renderTrainingTable() {
   let rows = trainings.filter(t => {
     if (search && !`${t.employee_name} ${t.training_topic} ${t.trainer}`.toLowerCase().includes(search)) return false;
     if (statusF && t.status !== statusF) return false;
-    if (empF && t.employee_name !== empF) return false;
+    if (empF && !t.employee_name.split(',').map(n=>n.trim()).includes(empF)) return false;
     return true;
   });
 
@@ -2284,7 +2321,7 @@ function renderTrainingTable() {
   tbody.innerHTML = rows.map(t => {
     const overdue = t.status !== 'Completed' && t.due_date && new Date(t.due_date) < today;
     return `<tr class="${overdue?'overdue-row':''}">
-      <td><strong>${t.employee_name}</strong></td>
+      <td><strong>${t.employee_name.split(',').map(n=>`<span style="display:inline-block;background:var(--blue-100);color:var(--blue-800);border:1px solid var(--blue-300);border-radius:12px;padding:1px 8px;font-size:0.75rem;font-weight:600;margin:1px">${n.trim()}</span>`).join('')}</strong></td>
       <td>${t.training_topic}</td>
       <td>${t.trainer||'—'}</td>
       <td class="${overdue?'':'td-muted'}" style="${overdue?'color:var(--red);font-weight:700':''}">
@@ -2307,11 +2344,12 @@ function openModal(type, id) {
 function closeModal(type) {
   document.getElementById('modal-'+type).classList.remove('open');
   // Reset form
-  if (type==='training') { ['t-id','t-employee','t-trainer','t-topic','t-due','t-reminder','t-notes'].forEach(id => { const el=document.getElementById(id); el.value=''; }); document.getElementById('t-status').value='Pending'; document.getElementById('modal-training-title').textContent='Add Training'; }
+  if (type==='training') { ['t-id','t-trainer','t-topic','t-due','t-reminder','t-notes'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; }); document.getElementById('t-status').value='Pending'; document.getElementById('modal-training-title').textContent='Add Training'; document.querySelectorAll('#t-employee-chips .emp-chip').forEach(c=>c.classList.remove('selected')); }
   if (type==='todo') { ['td-id','td-title','td-priority','td-assigned','td-deadline','td-notes'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; }); document.getElementById('modal-todo-title').textContent='Add Task'; clearMentions(); }
   if (type==='specs') { ['sp-id','sp-product','sp-revision','sp-date','sp-approved','sp-link','sp-summary'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; }); document.getElementById('modal-specs-title').textContent='Add Specification'; }
   if (type==='trials') { ['tr-id','tr-product','tr-date','tr-assigned','tr-link','tr-notes'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; }); document.getElementById('tr-ai-area').style.display='none'; document.getElementById('modal-trials-title').textContent='Add Trial Report'; }
   if (type==='announce') { ['an-title','an-message'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; }); }
+  if (type==='calevent') { ['ce-id','ce-title','ce-date','ce-end-date','ce-notes'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; }); const sel=document.getElementById('ce-type'); if(sel) sel.value='event'; document.getElementById('modal-calevent-title').textContent='📆 Add Event'; }
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -2340,16 +2378,22 @@ async function saveAnnouncement() {
   if (saved) {
     showToast('📢 Announcement posted to everyone!', 'success');
     closeModal('announce');
-    // Refresh anything that surfaces announcements
+    _allAnnouncements.unshift(saved);
+    renderAnnouncePage();
     renderNotifPanel();
     document.getElementById('bell-dot').classList.add('active');
   }
 }
 
+function toggleEmpChip(el) {
+  el.classList.toggle('selected');
+}
+
 async function saveTraining() {
   const id = document.getElementById('t-id').value;
+  const selectedEmps = [...document.querySelectorAll('#t-employee-chips .emp-chip.selected')].map(c=>c.dataset.name);
   const row = {
-    employee_name: document.getElementById('t-employee').value,
+    employee_name: selectedEmps.join(', '),
     training_topic: document.getElementById('t-topic').value,
     trainer: document.getElementById('t-trainer').value,
     due_date: document.getElementById('t-due').value || null,
@@ -2359,7 +2403,7 @@ async function saveTraining() {
     last_updated_by: currentUser,
     last_updated_at: new Date().toISOString()
   };
-  if (!row.employee_name || !row.training_topic) { showToast('Employee and Topic are required', 'error'); return; }
+  if (!row.employee_name || !row.training_topic) { showToast('Select at least one employee and a topic', 'error'); return; }
   if (id) { await dbUpdate('training_schedules', parseInt(id), row); showToast('Training updated!', 'success'); }
   else { await dbInsert('training_schedules', row); showToast('Training added!', 'success'); }
   closeModal('training');
@@ -2371,7 +2415,11 @@ function editTraining(id) {
   const t = trainings.find(x=>x.id===id);
   if (!t) return;
   document.getElementById('t-id').value = t.id;
-  document.getElementById('t-employee').value = t.employee_name;
+  // Populate multi-select chips
+  const names = (t.employee_name||'').split(',').map(n=>n.trim()).filter(Boolean);
+  document.querySelectorAll('#t-employee-chips .emp-chip').forEach(c => {
+    c.classList.toggle('selected', names.includes(c.dataset.name));
+  });
   document.getElementById('t-trainer').value = t.trainer||'';
   document.getElementById('t-topic').value = t.training_topic;
   document.getElementById('t-due').value = t.due_date||'';
@@ -2983,35 +3031,276 @@ function removeCalendarProduct(name) {
   renderCalendarTable();
 }
 
-// Hook calendar render into training page load
+// Hook calendar render into training page load — keep sensory table working
 const _origLoadTraining = loadTrainingPage;
 loadTrainingPage = async function() {
   await _origLoadTraining();
   renderCalendarTable();
 };
 
+/* ── GOOGLE-CALENDAR STYLE EVENT CALENDAR ─────────────────── */
+let _calPageDate = new Date(); // current month in view
+let _calEvents = []; // custom events stored in demoData.cal_events
+
+function _getCalEvents() {
+  if (!demoData.cal_events) { demoData.cal_events = []; saveDemoData(); }
+  return demoData.cal_events;
+}
+
+async function loadCalendarPage() {
+  _calEvents = await dbGet('cal_events');
+  const [trainings, todos, announcements] = await Promise.all([
+    dbGet('training_schedules'), dbGet('todos'), dbGet('announcements')
+  ]);
+  renderCalGrid(trainings, todos, announcements);
+}
+
+function calNav(dir) {
+  _calPageDate = new Date(_calPageDate.getFullYear(), _calPageDate.getMonth() + dir, 1);
+  loadCalendarPage();
+}
+function calGoToday() {
+  _calPageDate = new Date();
+  loadCalendarPage();
+}
+
+const CAL_DAY_NAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const CAL_MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+function renderCalGrid(trainings, todos, announcements) {
+  const year = _calPageDate.getFullYear();
+  const month = _calPageDate.getMonth();
+  const label = document.getElementById('cal-month-label');
+  if (label) label.textContent = `${CAL_MONTH_NAMES[month]} ${year}`;
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+
+  // Build a map: dateStr -> [{type, title, id}]
+  const eventMap = {};
+  function addEv(dateStr, ev) {
+    if (!dateStr) return;
+    if (!eventMap[dateStr]) eventMap[dateStr] = [];
+    eventMap[dateStr].push(ev);
+  }
+
+  // Trainings → blue (overdue → red)
+  trainings.forEach(t => {
+    if (!t.due_date) return;
+    const d = t.due_date.split('T')[0];
+    const isOverdue = t.status === 'Overdue' || (t.status !== 'Completed' && new Date(t.due_date) < today);
+    addEv(d, { type: isOverdue ? 'urgent' : 'training', title: `📅 ${t.training_topic} (${t.employee_name})`, id: 'train_'+t.id });
+  });
+
+  // Todos → amber (urgent/overdue → red)
+  todos.forEach(t => {
+    if (!t.deadline || t.completion_status) return;
+    const d = t.deadline.split('T')[0];
+    const isUrgent = t.priority === 'Urgent' || (new Date(t.deadline) < today);
+    addEv(d, { type: isUrgent ? 'urgent' : 'todo', title: `✅ ${t.task_title}`, id: 'todo_'+t.id });
+  });
+
+  // Announcements → green
+  announcements.forEach(a => {
+    const raw = a.posted_at || a.last_updated_at;
+    if (!raw) return;
+    const d = raw.split('T')[0];
+    addEv(d, { type: 'announce', title: `📢 ${a.title||'Announcement'}`, id: 'ann_'+a.id });
+  });
+
+  // Custom calendar events → purple
+  _calEvents.forEach(e => {
+    if (!e.date) return;
+    // Handle multi-day events
+    const start = new Date(e.date); start.setHours(0,0,0,0);
+    const end = e.end_date ? new Date(e.end_date) : start;
+    end.setHours(0,0,0,0);
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate()+1)) {
+      const ds = d.toISOString().split('T')[0];
+      addEv(ds, { type: e.type||'event', title: `📆 ${e.title}`, id: 'ev_'+e.id, evId: e.id });
+    }
+  });
+
+  // Build the grid HTML
+  const typeColors = {
+    urgent:   { bg:'#fee2e2', text:'#b91c1c', dot:'#ef4444' },
+    todo:     { bg:'#fffbeb', text:'#b45309', dot:'#f59e0b' },
+    training: { bg:'#eff6ff', text:'#1d4ed8', dot:'#3b82f6' },
+    announce: { bg:'#f0fdf4', text:'#15803d', dot:'#22c55e' },
+    event:    { bg:'#f5f3ff', text:'#7e22ce', dot:'#a855f7' },
+  };
+
+  // Header row
+  let html = `<div style="display:grid;grid-template-columns:repeat(7,1fr);border-bottom:2px solid var(--border)">
+    ${CAL_DAY_NAMES.map(d=>`<div style="padding:10px 6px;text-align:center;font-size:0.72rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted)">${d}</div>`).join('')}
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(7,1fr);grid-auto-rows:minmax(110px,auto)">`;
+
+  // Empty cells before month starts
+  for (let i = 0; i < firstDay; i++) {
+    html += `<div style="border-right:1px solid var(--border);border-bottom:1px solid var(--border);background:#f9fafb;padding:8px 6px;min-height:110px"></div>`;
+  }
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const ds = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const dayDate = new Date(year, month, day); dayDate.setHours(0,0,0,0);
+    const isToday = dayDate.getTime() === today.getTime();
+    const col = (firstDay + day - 1) % 7;
+    const borderRight = col < 6 ? '1px solid var(--border)' : 'none';
+    const evs = eventMap[ds] || [];
+    const maxShow = 3;
+    const shown = evs.slice(0, maxShow);
+    const extra = evs.length - maxShow;
+
+    html += `<div onclick="showDayPanel('${ds}', ${JSON.stringify(evs).replace(/'/g,'\\x27')})" 
+      style="border-right:${borderRight};border-bottom:1px solid var(--border);padding:8px 6px;min-height:110px;cursor:pointer;transition:background 0.14s;background:${isToday?'var(--blue-50)':'var(--surface)'}"
+      onmouseover="this.style.background='${isToday?'#dbeafe':'#f8faff'}'" onmouseout="this.style.background='${isToday?'var(--blue-50)':'var(--surface)'}'">
+      <div style="font-size:0.82rem;font-weight:${isToday?'800':'600'};color:${isToday?'var(--blue-600)':'var(--text)'};${isToday?'background:var(--blue-600);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;':''}margin-bottom:5px">${day}</div>
+      ${shown.map(e => {
+        const c = typeColors[e.type]||typeColors.event;
+        return `<div style="background:${c.bg};color:${c.text};border-radius:4px;padding:2px 6px;font-size:0.7rem;font-weight:600;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e.title}</div>`;
+      }).join('')}
+      ${extra > 0 ? `<div style="font-size:0.68rem;color:var(--text-muted);font-weight:600;margin-top:2px">+${extra} more</div>` : ''}
+    </div>`;
+  }
+
+  // Trailing empty cells
+  const totalCells = firstDay + daysInMonth;
+  const trailingCells = (7 - (totalCells % 7)) % 7;
+  for (let i = 0; i < trailingCells; i++) {
+    const col = (totalCells + i) % 7;
+    html += `<div style="border-right:${col<6?'1px solid var(--border)':'none'};border-bottom:1px solid var(--border);background:#f9fafb;min-height:110px"></div>`;
+  }
+
+  html += '</div>';
+  document.getElementById('cal-grid').innerHTML = html;
+  // Hide day panel when navigating
+  document.getElementById('cal-day-panel').style.display = 'none';
+}
+
+function showDayPanel(dateStr, evs) {
+  const panel = document.getElementById('cal-day-panel');
+  const title = document.getElementById('cal-day-panel-title');
+  const list = document.getElementById('cal-day-panel-list');
+  const d = new Date(dateStr+'T00:00:00');
+  title.textContent = d.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  const typeColors = {
+    urgent:   { bg:'#fee2e2', text:'#b91c1c', border:'#ef4444', label:'Urgent / Overdue' },
+    todo:     { bg:'#fffbeb', text:'#b45309', border:'#f59e0b', label:'To-Do' },
+    training: { bg:'#eff6ff', text:'#1d4ed8', border:'#3b82f6', label:'Training' },
+    announce: { bg:'#f0fdf4', text:'#15803d', border:'#22c55e', label:'Announcement' },
+    event:    { bg:'#f5f3ff', text:'#7e22ce', border:'#a855f7', label:'Event' },
+  };
+  if (!evs.length) {
+    const isOfficer = currentRole === 'officer';
+    list.innerHTML = `<div style="color:var(--text-muted);font-size:0.85rem;padding:8px 0">No events on this day.${isOfficer?' <a href="javascript:void(0)" style="color:var(--blue-600);font-weight:600" onclick="openCalEventModal(\''+dateStr+'\')">+ Add one</a>':''}</div>`;
+  } else {
+    list.innerHTML = evs.map(e => {
+      const c = typeColors[e.type]||typeColors.event;
+      const deleteBtn = (currentRole==='officer' && e.evId) ? `<button onclick="deleteCalEvent(${e.evId})" style="background:none;border:1px solid #fca5a5;color:#ef4444;border-radius:5px;padding:2px 6px;font-size:0.72rem;cursor:pointer;margin-left:auto">🗑</button>` : '';
+      return `<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:9px;background:${c.bg};border-left:4px solid ${c.border};margin-bottom:8px">
+        <div style="flex:1">
+          <div style="font-weight:700;color:${c.text};font-size:0.9rem">${e.title}</div>
+          <div style="font-size:0.72rem;color:var(--text-muted);margin-top:2px">${c.label}</div>
+        </div>
+        ${deleteBtn}
+      </div>`;
+    }).join('');
+  }
+  panel.style.display = 'block';
+  panel.scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+function openCalEventModal(prefillDate) {
+  if (blockIfField()) return;
+  if (prefillDate) document.getElementById('ce-date').value = prefillDate;
+  document.getElementById('modal-calevent').classList.add('open');
+  setTimeout(()=>document.getElementById('ce-title').focus(),50);
+}
+
+async function saveCalEvent() {
+  if (blockIfField()) return;
+  const title = document.getElementById('ce-title').value.trim();
+  const date  = document.getElementById('ce-date').value;
+  if (!title || !date) { showToast('Title and date are required','error'); return; }
+  const payload = {
+    title, date,
+    end_date: document.getElementById('ce-end-date').value || null,
+    type: document.getElementById('ce-type').value,
+    notes: document.getElementById('ce-notes').value.trim(),
+    created_by: currentUser,
+    created_at: new Date().toISOString()
+  };
+  const saved = await dbInsert('cal_events', payload);
+  if (saved) {
+    _calEvents.push(saved);
+    showToast('Event added to calendar!', 'success');
+    closeModal('calevent');
+    loadCalendarPage();
+  }
+}
+
+async function deleteCalEvent(evId) {
+  if (blockIfField()) return;
+  if (!confirm('Remove this event from the calendar?')) return;
+  await dbDelete('cal_events', evId);
+  _calEvents = _calEvents.filter(e => e.id !== evId);
+  showToast('Event removed', 'success');
+  loadCalendarPage();
+}
+
 /* ── ANNOUNCEMENTS PAGE ─────────────────────────────────── */
+let _allAnnouncements = [];
+
 async function loadAnnouncePage() {
-  const list = await dbGet('announcements');
-  const sorted = [...list].sort((a,b) => new Date(b.posted_at||b.last_updated_at||0) - new Date(a.posted_at||a.last_updated_at||0));
+  _allAnnouncements = await dbGet('announcements');
+  _allAnnouncements.sort((a,b) => new Date(b.posted_at||b.last_updated_at||0) - new Date(a.posted_at||a.last_updated_at||0));
+  renderAnnouncePage();
+  // Mark as seen
+  try { localStorage.setItem('qcboard_announce_seen_'+currentUser, String(Date.now())); } catch(e){}
+  const badge = document.getElementById('badge-announce');
+  if (badge) badge.style.display='none';
+}
+
+function renderAnnouncePage() {
+  const search = (document.getElementById('announce-search')?.value||'').toLowerCase();
+  const author = document.getElementById('announce-author-filter')?.value||'';
+  let sorted = _allAnnouncements.filter(a => {
+    if (search && !((a.title||'')+(a.message||'')+(a.posted_by||'')).toLowerCase().includes(search)) return false;
+    if (author && a.posted_by !== author) return false;
+    return true;
+  });
   const wrap = document.getElementById('announce-list');
   const empty = document.getElementById('announce-empty');
   if (!sorted.length) { wrap.innerHTML=''; empty.style.display='block'; return; }
   empty.style.display='none';
-  wrap.innerHTML = sorted.map(a => `
+  const isOfficer = currentRole === 'officer';
+  wrap.innerHTML = sorted.map(a => {
+    const safeMsg = (a.message||'').replace(/</g,'&lt;').replace(/\n/g,'<br>');
+    const typeColor = {'urgent':'#fee2e2','training':'#eff6ff','event':'#f5f3ff','todo':'#fffbeb'}['announce']||'#f0fdf4';
+    return `
     <div style="border:1px solid var(--border);border-left:4px solid var(--green);border-radius:10px;padding:14px;background:#f0fdf4">
       <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start">
         <div style="font-weight:700;color:var(--text);font-size:1.05rem">${(a.title||'(untitled)')}</div>
-        <div style="font-size:0.78rem;color:var(--text-muted);white-space:nowrap">${new Date(a.posted_at||a.last_updated_at||Date.now()).toLocaleString()}</div>
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+          <div style="font-size:0.78rem;color:var(--text-muted);white-space:nowrap">${new Date(a.posted_at||a.last_updated_at||Date.now()).toLocaleString()}</div>
+          ${isOfficer ? `<button onclick="deleteAnnouncement(${a.id})" title="Delete announcement" style="background:none;border:1px solid #fca5a5;color:#ef4444;border-radius:6px;padding:3px 7px;font-size:0.75rem;cursor:pointer;line-height:1;transition:all 0.15s" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='none'">🗑</button>` : ''}
+        </div>
       </div>
-      <div style="margin-top:6px;color:var(--text-2);white-space:pre-wrap">${(a.message||'')}</div>
-      <div style="margin-top:8px;font-size:0.8rem;color:var(--text-muted)">Posted by ${a.posted_by||'—'}</div>
-    </div>
-  `).join('');
-  // Mark as seen
-  try { localStorage.setItem('qcboard_announce_seen_'+currentUser, new Date().toISOString()); } catch(e){}
-  const badge = document.getElementById('badge-announce');
-  if (badge) badge.style.display='none';
+      <div style="margin-top:6px;color:var(--text-2);line-height:1.6">${safeMsg}</div>
+      <div style="margin-top:8px;font-size:0.8rem;color:var(--text-muted)">Posted by <strong>${a.posted_by||'—'}</strong></div>
+    </div>`;
+  }).join('');
+}
+
+async function deleteAnnouncement(id) {
+  if (blockIfField()) return;
+  if (!confirm('Delete this announcement?')) return;
+  await dbDelete('announcements', id);
+  showToast('Announcement deleted', 'success');
+  _allAnnouncements = _allAnnouncements.filter(a => a.id !== id);
+  renderAnnouncePage();
 }
 
 </script>
