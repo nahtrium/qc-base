@@ -1789,6 +1789,10 @@
       </select>
     </div>
     <div class="form-group">
+      <label class="form-label">🔔 Reminder Date <span style="font-weight:400;color:var(--text-muted)">(optional — shows in Notification Center)</span></label>
+      <input class="form-input" type="date" id="ce-reminder">
+    </div>
+    <div class="form-group">
       <label class="form-label">Notes</label>
       <textarea class="form-input form-textarea" id="ce-notes" placeholder="Additional notes..." rows="3"></textarea>
     </div>
@@ -2083,6 +2087,16 @@ async function renderNotifPanel() {
   const [trainings, todosAll, specsAll, announcementsAll] = await Promise.all([
     dbGet('training_schedules'), dbGet('todos'), dbGet('product_specifications'), dbGet('announcements')
   ]);
+
+  // Also load cal_events for reminders
+  let calEventsNotif = [];
+  try {
+    if (DEMO_MODE) { calEventsNotif = demoData['cal_events'] || []; }
+    else {
+      const { data, error } = await db.from('cal_events').select('*').order('created_at', { ascending: false });
+      calEventsNotif = (!error && data) ? data : [];
+    }
+  } catch(e) { calEventsNotif = []; }
   const me = currentUser;
   const isField = currentRole === 'field';
 
@@ -2133,6 +2147,25 @@ async function renderNotifPanel() {
   html.push('<div class="notif-group-title">📢 Product Spec Updates</div>');
   if (!recentSpecs.length) html.push('<div class="notif-empty" style="padding:10px 20px">No recent updates.</div>');
   else recentSpecs.forEach(s => html.push(`<div class="notif-item announce"><div class="notif-item-title">${s.product_name} — ${s.revision_number||''}</div><div class="notif-item-meta">${s.summary||'(no summary)'} · Updated ${fmtDate(s.last_updated_at)} by ${s.last_updated_by||'—'}</div></div>`));
+
+  // Calendar event reminders (next 7 days)
+  const todayN = new Date(); todayN.setHours(0,0,0,0);
+  const upcomingCalReminders = calEventsNotif.filter(e => {
+    if (!e.reminder_date) return false;
+    const rd = new Date(e.reminder_date); rd.setHours(0,0,0,0);
+    const diff = Math.round((rd - todayN)/(1000*60*60*24));
+    return diff >= 0 && diff <= 7;
+  }).sort((a,b) => new Date(a.reminder_date) - new Date(b.reminder_date));
+
+  if (upcomingCalReminders.length) {
+    html.push('<div class="notif-group-title">🔔 Calendar Reminders</div>');
+    upcomingCalReminders.forEach(e => {
+      const rd = new Date(e.reminder_date); rd.setHours(0,0,0,0);
+      const diff = Math.round((rd - todayN)/(1000*60*60*24));
+      const when = diff === 0 ? '⚡ Today!' : diff === 1 ? '🌅 Tomorrow' : `📅 in ${diff} day(s)`;
+      html.push(`<div class="notif-item task"><div class="notif-item-title">📆 ${e.title}</div><div class="notif-item-meta">${when} · Event on ${fmtDate(e.date)}${e.notes ? ' · '+e.notes.slice(0,50) : ''}</div></div>`);
+    });
+  }
 
   body.innerHTML = html.join('');
 }
@@ -2218,9 +2251,15 @@ async function dbDelete(table, id) {
    DASHBOARD
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 async function loadDashboard() {
-  const [trainings, todos, specs] = await Promise.all([
+  const [trainings, todos, specs, calEventsRaw] = await Promise.all([
     dbGet('training_schedules'), dbGet('todos'),
-    dbGet('product_specifications')
+    dbGet('product_specifications'),
+    DEMO_MODE ? Promise.resolve(demoData['cal_events'] || []) : (async () => {
+      try {
+        const { data, error } = await db.from('cal_events').select('*').order('created_at', { ascending: false });
+        return (!error && data) ? data : [];
+      } catch(e) { return []; }
+    })()
   ]);
 
   const today = new Date(); today.setHours(0,0,0,0);
@@ -2255,6 +2294,16 @@ async function loadDashboard() {
   // Recently updated specs in notification center
   const recentSpecs5 = [...specs].sort((a,b)=>new Date(b.last_updated_at||0)-new Date(a.last_updated_at||0)).slice(0,5);
   recentSpecs5.forEach(s => alerts.push({ type:'spec', text:`📋 Spec Updated: ${s.product_name} ${s.revision_number||''}`, sub:`${s.summary||'(no summary)'} · by ${s.last_updated_by||'—'} on ${fmtDate(s.last_updated_at)}` }));
+
+  // Calendar event reminders
+  calEventsRaw.filter(e => e.reminder_date).forEach(e => {
+    const remDate = new Date(e.reminder_date); remDate.setHours(0,0,0,0);
+    const diff = Math.round((remDate - today)/(1000*60*60*24));
+    if (diff >= 0 && diff <= 7) {
+      const label = diff === 0 ? 'Today!' : diff === 1 ? 'Tomorrow' : `in ${diff} day(s)`;
+      alerts.push({ type: diff <= 1 ? 'warning' : 'info', text: `🔔 Calendar Reminder: ${e.title}`, sub: `Event on ${fmtDate(e.date)} — reminder ${label}` });
+    }
+  });
 
   const alertsEl = document.getElementById('dash-alerts');
   if (!alerts.length) {
@@ -2348,7 +2397,7 @@ function closeModal(type) {
   if (type==='specs') { ['sp-id','sp-product','sp-revision','sp-date','sp-approved','sp-link','sp-summary'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; }); document.getElementById('modal-specs-title').textContent='Add Specification'; }
   if (type==='trials') { ['tr-id','tr-product','tr-date','tr-assigned','tr-link','tr-notes'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; }); document.getElementById('tr-ai-area').style.display='none'; document.getElementById('modal-trials-title').textContent='Add Trial Report'; }
   if (type==='announce') { ['an-title','an-message'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; }); }
-  if (type==='calevent') { ['ce-id','ce-title','ce-date','ce-end-date','ce-notes'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; }); const sel=document.getElementById('ce-type'); if(sel) sel.value='event'; document.getElementById('modal-calevent-title').textContent='📆 Add Event'; }
+  if (type==='calevent') { ['ce-id','ce-title','ce-date','ce-end-date','ce-reminder','ce-notes'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; }); const sel=document.getElementById('ce-type'); if(sel) sel.value='event'; document.getElementById('modal-calevent-title').textContent='📆 Add Event'; }
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -3127,7 +3176,7 @@ function renderCalGrid(trainings, todos, announcements) {
     end.setHours(0,0,0,0);
     for (let d = new Date(start); d <= end; d.setDate(d.getDate()+1)) {
       const ds = d.toISOString().split('T')[0];
-      addEv(ds, { type: e.type||'event', title: `📆 ${e.title}`, id: 'ev_'+e.id, evId: e.id });
+      addEv(ds, { type: e.type||'event', title: `📆 ${e.title}`, id: 'ev_'+e.id, evId: e.id, reminder_date: e.reminder_date||null, notes: e.notes||'' });
     }
   });
 
@@ -3210,10 +3259,14 @@ function showDayPanel(dateStr, evs) {
     list.innerHTML = evs.map(e => {
       const c = typeColors[e.type]||typeColors.event;
       const deleteBtn = (currentRole==='officer' && e.evId) ? `<button onclick="deleteCalEvent(${e.evId})" style="background:none;border:1px solid #fca5a5;color:#ef4444;border-radius:5px;padding:2px 6px;font-size:0.72rem;cursor:pointer;margin-left:auto">🗑</button>` : '';
-      return `<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:9px;background:${c.bg};border-left:4px solid ${c.border};margin-bottom:8px">
+      const reminderHtml = e.reminder_date ? `<div style="margin-top:4px;display:inline-flex;align-items:center;gap:4px;background:#fef3c7;color:#b45309;border-radius:6px;padding:2px 8px;font-size:0.7rem;font-weight:600">🔔 Reminder set: ${fmtDate(e.reminder_date)}</div>` : '';
+      const notesHtml = e.notes ? `<div style="margin-top:4px;font-size:0.75rem;color:var(--text-muted)">${e.notes}</div>` : '';
+      return `<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border-radius:9px;background:${c.bg};border-left:4px solid ${c.border};margin-bottom:8px">
         <div style="flex:1">
           <div style="font-weight:700;color:${c.text};font-size:0.9rem">${e.title}</div>
           <div style="font-size:0.72rem;color:var(--text-muted);margin-top:2px">${c.label}</div>
+          ${notesHtml}
+          ${reminderHtml}
         </div>
         ${deleteBtn}
       </div>`;
@@ -3238,6 +3291,7 @@ async function saveCalEvent() {
   const payload = {
     title, date,
     end_date: document.getElementById('ce-end-date').value || null,
+    reminder_date: document.getElementById('ce-reminder').value || null,
     type: document.getElementById('ce-type').value,
     notes: document.getElementById('ce-notes').value.trim(),
     created_by: currentUser,
@@ -3293,15 +3347,17 @@ function renderAnnouncePage() {
     const safeMsg = (a.message||'').replace(/</g,'&lt;').replace(/\n/g,'<br>');
     const typeColor = {'urgent':'#fee2e2','training':'#eff6ff','event':'#f5f3ff','todo':'#fffbeb'}['announce']||'#f0fdf4';
     return `
-    <div style="border:1px solid var(--border);border-left:4px solid var(--green);border-radius:10px;padding:14px;background:#f0fdf4">
+    <div style="border:1px solid var(--border);border-left:4px solid var(--green);border-radius:10px;padding:14px;background:#f0fdf4" id="announce-card-${a.id}">
       <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start">
         <div style="font-weight:700;color:var(--text);font-size:1.05rem">${(a.title||'(untitled)')}</div>
         <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
           <div style="font-size:0.78rem;color:var(--text-muted);white-space:nowrap">${new Date(a.posted_at||a.last_updated_at||Date.now()).toLocaleString()}</div>
+          <button onclick="summarizeAnnouncement(${a.id}, ${JSON.stringify((a.title||'')).replace(/'/g,"\\'")} , ${JSON.stringify((a.message||'')).replace(/'/g,"\\'")})" title="AI Summary" style="background:linear-gradient(135deg,#7c3aed,#a855f7);border:none;color:#fff;border-radius:6px;padding:3px 8px;font-size:0.72rem;cursor:pointer;line-height:1.4;display:inline-flex;align-items:center;gap:3px;font-weight:600" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">✨ AI Summary</button>
           ${isOfficer ? `<button onclick="deleteAnnouncement(${a.id})" title="Delete announcement" style="background:none;border:1px solid #fca5a5;color:#ef4444;border-radius:6px;padding:3px 7px;font-size:0.75rem;cursor:pointer;line-height:1;transition:all 0.15s" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='none'">🗑</button>` : ''}
         </div>
       </div>
       <div style="margin-top:6px;color:var(--text-2);line-height:1.6">${safeMsg}</div>
+      <div id="announce-summary-${a.id}" style="display:none;margin-top:10px;background:#fff;border:1.5px solid #a855f7;border-radius:8px;padding:10px 14px"></div>
       <div style="margin-top:8px;font-size:0.8rem;color:var(--text-muted)">Posted by <strong>${a.posted_by||'—'}</strong></div>
     </div>`;
   }).join('');
@@ -3314,6 +3370,52 @@ async function deleteAnnouncement(id) {
   showToast('Announcement deleted', 'success');
   _allAnnouncements = _allAnnouncements.filter(a => a.id !== id);
   renderAnnouncePage();
+}
+
+/* ── AI ANNOUNCEMENT SUMMARY ───────────────────────────────── */
+async function summarizeAnnouncement(id, title, message) {
+  const summaryEl = document.getElementById('announce-summary-' + id);
+  if (!summaryEl) return;
+
+  // Toggle off if already showing
+  if (summaryEl.style.display === 'block') {
+    summaryEl.style.display = 'none';
+    return;
+  }
+
+  summaryEl.style.display = 'block';
+  summaryEl.innerHTML = `
+    <div style="display:flex;align-items:center;gap:8px;color:#7c3aed;font-size:0.82rem;font-weight:600">
+      <span style="display:inline-block;width:14px;height:14px;border:2px solid #a855f7;border-top-color:transparent;border-radius:50%;animation:spin 0.7s linear infinite"></span>
+      Generating AI summary…
+    </div>`;
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        messages: [{
+          role: 'user',
+          content: `Summarize this QC team announcement in 2-3 concise bullet points in the same language as the announcement. Focus on key actions, deadlines, or information the team needs to know. Keep each bullet short (max 20 words). Return only the bullet points, starting each with •.\n\nTitle: ${title}\nMessage: ${message}`
+        }]
+      })
+    });
+
+    const data = await response.json();
+    if (data.error) throw new Error(data.error.message);
+    const text = (data.content||[]).map(c=>c.text||'').join('').trim();
+
+    summaryEl.innerHTML = `
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:7px">
+        <span style="font-size:0.7rem;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;color:#7c3aed;background:#f5f3ff;border-radius:4px;padding:2px 7px">✨ AI Summary</span>
+      </div>
+      <div style="font-size:0.83rem;color:var(--text);line-height:1.7;white-space:pre-line">${text.replace(/</g,'&lt;')}</div>`;
+  } catch(err) {
+    summaryEl.innerHTML = `<div style="color:var(--red);font-size:0.8rem">⚠️ Could not generate summary: ${err.message}</div>`;
+  }
 }
 
 </script>
