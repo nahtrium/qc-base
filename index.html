@@ -3000,44 +3000,79 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
 /* ── PRODUCTION CALENDAR ─────────────────────────────────── */
 const CAL_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 let _calEditKey = null;
+let _sensoryProducts = [];
+let _sensoryCells = {}; // key: "product||monthIdx" -> { text, by, at, id }
 
-function _calData() {
-  if (!demoData.production_calendar) {
-    demoData.production_calendar = { products: ['Mentai Sauce','Sambal Korek'], cells: {} };
-    saveDemoData();
+async function loadSensoryData() {
+  if (DEMO_MODE) {
+    if (!demoData.production_calendar) {
+      demoData.production_calendar = { products: ['Mentai Sauce','Sambal Korek'], cells: {} };
+      saveDemoData();
+    }
+    _sensoryProducts = demoData.production_calendar.products.map((name, i) => ({ id: i+1, name }));
+    _sensoryCells = {};
+    Object.entries(demoData.production_calendar.cells).forEach(([key, val]) => {
+      _sensoryCells[key] = { ...val };
+    });
+  } else {
+    try {
+      const [pRes, cRes] = await Promise.all([
+        db.from('sensory_products').select('*').order('sort_order', { ascending: true }),
+        db.from('sensory_cells').select('*')
+      ]);
+      if (pRes.error) {
+        console.error('sensory_products error:', pRes.error);
+        showToast('⚠️ Table "sensory_products" not found in Supabase — please create it first', 'error');
+        _sensoryProducts = [];
+      } else {
+        _sensoryProducts = pRes.data || [];
+      }
+      _sensoryCells = {};
+      if (cRes.error) {
+        console.error('sensory_cells error:', cRes.error);
+        showToast('⚠️ Table "sensory_cells" not found in Supabase — please create it first', 'error');
+      } else if (cRes.data) {
+        cRes.data.forEach(row => {
+          _sensoryCells[row.product_name+'||'+row.month_idx] = {
+            id: row.id, text: row.comment, by: row.updated_by, at: row.updated_at
+          };
+        });
+      }
+    } catch(e) {
+      console.warn('Sensory data load error:', e);
+      _sensoryProducts = [];
+      _sensoryCells = {};
+    }
   }
-  return demoData.production_calendar;
 }
 
 function renderCalendarTable() {
-  const data = _calData();
   const isField = currentRole === 'field';
-  // Header
   const thead = document.getElementById('calendar-thead-row');
   if (!thead) return;
   thead.innerHTML = '<th style="min-width:160px;position:sticky;left:0;background:var(--surface);z-index:2">Product</th>' +
     CAL_MONTHS.map(m => `<th style="text-align:center;min-width:90px">${m} 2026</th>`).join('');
-  // Body
   const tbody = document.getElementById('calendar-tbody');
-  tbody.innerHTML = data.products.map(prod => {
+  tbody.innerHTML = _sensoryProducts.map(prod => {
     const cells = CAL_MONTHS.map((m,i) => {
-      const key = prod+'||'+i;
-      const c = data.cells[key];
+      const key = prod.name+'||'+i;
+      const c = _sensoryCells[key];
       const hasC = c && (c.text||'').trim();
-      const dot = hasC ? '<span title="Has comment" style="display:inline-block;width:8px;height:8px;border-radius:99px;background:var(--blue-500)"></span>' : '<span style="color:var(--text-muted);font-size:0.8rem">–</span>';
-      return `<td style="text-align:center;cursor:pointer" onclick="openCalendarCell('${prod.replace(/'/g,"\\'")}', ${i})">${dot}</td>`;
+      const dot = hasC
+        ? `<span title="${(c.text||'').slice(0,60).replace(/"/g,'&quot;')}" style="display:inline-block;width:8px;height:8px;border-radius:99px;background:var(--blue-500)"></span>`
+        : '<span style="color:var(--text-muted);font-size:0.8rem">–</span>';
+      return `<td style="text-align:center;cursor:pointer" onclick="openCalendarCell(${JSON.stringify(prod.name)}, ${i})">${dot}</td>`;
     }).join('');
-    const del = isField ? '' : `<button class="btn btn-secondary btn-sm officer-only" style="margin-left:6px;padding:2px 6px" onclick="event.stopPropagation();removeCalendarProduct('${prod.replace(/'/g,"\\'")}')" title="Remove">✕</button>`;
-    return `<tr><td style="font-weight:600;position:sticky;left:0;background:var(--surface)">${prod}${del}</td>${cells}</tr>`;
+    const del = isField ? '' : `<button class="btn btn-secondary btn-sm officer-only" style="margin-left:6px;padding:2px 6px" onclick="event.stopPropagation();removeCalendarProduct(${JSON.stringify(prod.name)})" title="Remove">✕</button>`;
+    return `<tr><td style="font-weight:600;position:sticky;left:0;background:var(--surface)">${prod.name}${del}</td>${cells}</tr>`;
   }).join('');
 }
 
-function openCalendarCell(prod, monthIdx) {
-  const data = _calData();
-  const key = prod+'||'+monthIdx;
-  const c = data.cells[key] || {};
+function openCalendarCell(prodName, monthIdx) {
+  const key = prodName+'||'+monthIdx;
+  const c = _sensoryCells[key] || {};
   _calEditKey = key;
-  document.getElementById('modal-cal-title').textContent = `${prod} — ${CAL_MONTHS[monthIdx]} 2026`;
+  document.getElementById('modal-cal-title').textContent = `${prodName} — ${CAL_MONTHS[monthIdx]} 2026`;
   document.getElementById('cal-meta').textContent = c.by ? `Last updated by ${c.by} · ${new Date(c.at).toLocaleString()}` : 'No comment yet.';
   const ta = document.getElementById('cal-comment');
   ta.value = c.text || '';
@@ -3047,46 +3082,93 @@ function openCalendarCell(prod, monthIdx) {
   document.getElementById('modal-cal').classList.add('open');
 }
 
-function saveCalendarComment() {
+async function saveCalendarComment() {
   if (currentRole === 'field') return;
   if (!_calEditKey) return;
-  const data = _calData();
   const text = document.getElementById('cal-comment').value.trim();
-  if (!text) { delete data.cells[_calEditKey]; }
-  else { data.cells[_calEditKey] = { text, by: currentUser, at: new Date().toISOString() }; }
-  saveDemoData();
+  const [prodName, monthIdxStr] = _calEditKey.split('||');
+  const monthIdx = parseInt(monthIdxStr);
+  const now = new Date().toISOString();
+
+  if (DEMO_MODE) {
+    if (!demoData.production_calendar) demoData.production_calendar = { products: [], cells: {} };
+    if (!text) { delete demoData.production_calendar.cells[_calEditKey]; delete _sensoryCells[_calEditKey]; }
+    else {
+      const entry = { text, by: currentUser, at: now };
+      demoData.production_calendar.cells[_calEditKey] = entry;
+      _sensoryCells[_calEditKey] = entry;
+    }
+    saveDemoData();
+  } else {
+    const existing = _sensoryCells[_calEditKey];
+    if (!text) {
+      if (existing && existing.id) await db.from('sensory_cells').delete().eq('id', existing.id);
+      delete _sensoryCells[_calEditKey];
+    } else if (existing && existing.id) {
+      const { error } = await db.from('sensory_cells').update({ comment: text, updated_by: currentUser, updated_at: now }).eq('id', existing.id);
+      if (error) { showToast('Save error: '+error.message, 'error'); return; }
+      _sensoryCells[_calEditKey] = { ...existing, text, by: currentUser, at: now };
+    } else {
+      const { data, error } = await db.from('sensory_cells').insert([{
+        product_name: prodName, month_idx: monthIdx,
+        comment: text, updated_by: currentUser, updated_at: now
+      }]).select().single();
+      if (error) { showToast('Save error: '+error.message, 'error'); return; }
+      if (data) _sensoryCells[_calEditKey] = { id: data.id, text, by: currentUser, at: now };
+    }
+  }
   closeModal('cal');
   renderCalendarTable();
-  showToast('Comment saved','success');
+  showToast('Comment saved', 'success');
 }
 
-function addCalendarProduct() {
+async function addCalendarProduct() {
   if (currentRole === 'field') return;
   const name = (prompt('New product name:')||'').trim();
   if (!name) return;
-  const data = _calData();
-  if (data.products.includes(name)) { showToast('Product already exists','error'); return; }
-  data.products.push(name);
-  saveDemoData();
+  if (_sensoryProducts.find(p => p.name === name)) { showToast('Product already exists','error'); return; }
+
+  if (DEMO_MODE) {
+    if (!demoData.production_calendar) demoData.production_calendar = { products: [], cells: {} };
+    demoData.production_calendar.products.push(name);
+    saveDemoData();
+    _sensoryProducts.push({ id: Date.now(), name });
+  } else {
+    const sortOrder = _sensoryProducts.length;
+    const { data, error } = await db.from('sensory_products').insert([{ name, sort_order: sortOrder }]).select().single();
+    if (error) { showToast('Could not add product: '+error.message, 'error'); return; }
+    _sensoryProducts.push(data);
+  }
   renderCalendarTable();
 }
 
-function removeCalendarProduct(name) {
+async function removeCalendarProduct(name) {
   if (currentRole === 'field') return;
   if (!confirm(`Remove product "${name}" from calendar?`)) return;
-  const data = _calData();
-  data.products = data.products.filter(p => p !== name);
-  Object.keys(data.cells).forEach(k => { if (k.startsWith(name+'||')) delete data.cells[k]; });
-  saveDemoData();
+
+  if (DEMO_MODE) {
+    demoData.production_calendar.products = demoData.production_calendar.products.filter(p => p !== name);
+    Object.keys(demoData.production_calendar.cells).forEach(k => { if (k.startsWith(name+'||')) delete demoData.production_calendar.cells[k]; });
+    saveDemoData();
+  } else {
+    await Promise.all([
+      db.from('sensory_products').delete().eq('name', name),
+      db.from('sensory_cells').delete().eq('product_name', name)
+    ]);
+  }
+  _sensoryProducts = _sensoryProducts.filter(p => p.name !== name);
+  Object.keys(_sensoryCells).forEach(k => { if (k.startsWith(name+'||')) delete _sensoryCells[k]; });
   renderCalendarTable();
+  showToast(`"${name}" removed`, 'success');
 }
 
-// Hook calendar render into training page load — keep sensory table working
+// Hook calendar render into training page load
 const _origLoadTraining = loadTrainingPage;
 loadTrainingPage = async function() {
   await _origLoadTraining();
+  await loadSensoryData();
   renderCalendarTable();
-};
+};;
 
 /* ── GOOGLE-CALENDAR STYLE EVENT CALENDAR ─────────────────── */
 let _calPageDate = new Date(); // current month in view
