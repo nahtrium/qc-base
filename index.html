@@ -2208,9 +2208,21 @@ function showPage(name, el) {
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 async function dbGet(table) {
   if (DEMO_MODE) return demoData[table] || [];
-  const orderCol = (table === 'cal_events') ? 'created_at' : 'last_updated_at';
-  const { data, error } = await db.from(table).select('*').order(orderCol, { ascending:false });
-  if (error) { showToast('DB read error: '+error.message, 'error'); return []; }
+  const orderMap = {
+    cal_events: 'created_at',
+    training_schedules: 'last_updated_at',
+    todos: 'last_updated_at',
+    product_specifications: 'last_updated_at',
+    announcements: 'last_updated_at',
+    trial_reports: 'last_updated_at',
+  };
+  const orderCol = orderMap[table] || 'id';
+  const { data, error } = await db.from(table).select('*').order(orderCol, { ascending: false });
+  if (error) {
+    console.error(`dbGet(${table}) error:`, error);
+    showToast(`DB error on "${table}": ${error.message}`, 'error');
+    return [];
+  }
   return data || [];
 }
 
