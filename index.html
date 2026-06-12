@@ -1470,20 +1470,22 @@
           <span style="display:flex;align-items:center;gap:4px"><span style="width:9px;height:9px;border-radius:2px;background:#3b82f6;display:inline-block;flex-shrink:0"></span>Training</span>
           <span style="display:flex;align-items:center;gap:4px"><span style="width:9px;height:9px;border-radius:2px;background:#22c55e;display:inline-block;flex-shrink:0"></span>Announcement</span>
           <span style="display:flex;align-items:center;gap:4px"><span style="width:9px;height:9px;border-radius:2px;background:#a855f7;display:inline-block;flex-shrink:0"></span>Event</span>
+          <span style="display:flex;align-items:center;gap:4px"><span style="width:9px;height:9px;border-radius:2px;background:#eab308;display:inline-block;flex-shrink:0"></span>Reminder</span>
         </div>
         <div class="card" style="padding:0;overflow:hidden">
           <div id="cal-grid-wrap" style="overflow-x:auto;width:100%">
             <div id="cal-grid" style="min-width:560px;width:100%"></div>
           </div>
         </div>
-        <!-- Day detail panel -->
-        <div id="cal-day-panel" style="display:none;margin-top:16px">
-          <div class="card">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-              <div class="card-title" id="cal-day-panel-title">Events on …</div>
-              <button onclick="document.getElementById('cal-day-panel').style.display='none'" style="background:none;border:none;font-size:1.2rem;color:var(--text-muted);cursor:pointer">✕</button>
+        <!-- Day detail panel - always visible below calendar -->
+        <div id="cal-day-panel" style="margin-top:16px">
+          <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)">
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 20px;border-bottom:1.5px solid var(--border)">
+              <div id="cal-day-panel-title" style="font-size:0.78rem;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:var(--blue-700)">— CLICK A DATE TO SEE EVENTS —</div>
             </div>
-            <div id="cal-day-panel-list"></div>
+            <div id="cal-day-panel-list" style="padding:14px 20px;min-height:52px">
+              <div style="color:var(--text-muted);font-size:0.85rem">Select any date on the calendar above.</div>
+            </div>
           </div>
         </div>
       </div>
@@ -3089,6 +3091,7 @@ loadTrainingPage = async function() {
 /* ── GOOGLE-CALENDAR STYLE EVENT CALENDAR ─────────────────── */
 let _calPageDate = new Date(); // current month in view
 let _calEvents = []; // custom events stored in demoData.cal_events
+let _calEventMap = {}; // date string -> events array, for safe day panel lookup
 
 function _getCalEvents() {
   if (!demoData.cal_events) { demoData.cal_events = []; saveDemoData(); }
@@ -3137,6 +3140,7 @@ function renderCalGrid(trainings, todos, announcements) {
 
   // Build a map: dateStr -> [{type, title, id}]
   const eventMap = {};
+  _calEventMap = eventMap; // store reference for safe day panel lookup
   function addEv(dateStr, ev) {
     if (!dateStr) return;
     if (!eventMap[dateStr]) eventMap[dateStr] = [];
@@ -3178,6 +3182,11 @@ function renderCalGrid(trainings, todos, announcements) {
       const ds = d.toISOString().split('T')[0];
       addEv(ds, { type: e.type||'event', title: `📆 ${e.title}`, id: 'ev_'+e.id, evId: e.id, reminder_date: e.reminder_date||null, notes: e.notes||'' });
     }
+    // Show a reminder chip on the reminder_date (yellow bell)
+    if (e.reminder_date) {
+      const rd = e.reminder_date.split('T')[0];
+      addEv(rd, { type: 'reminder', title: `🔔 ${e.title}`, id: 'rem_'+e.id, evId: e.id, notes: `Reminder for event on ${fmtDate(e.date)}`, reminder_date: e.reminder_date });
+    }
   });
 
   // Build the grid HTML
@@ -3187,6 +3196,7 @@ function renderCalGrid(trainings, todos, announcements) {
     training: { bg:'#eff6ff', text:'#1d4ed8', dot:'#3b82f6' },
     announce: { bg:'#f0fdf4', text:'#15803d', dot:'#22c55e' },
     event:    { bg:'#f5f3ff', text:'#7e22ce', dot:'#a855f7' },
+    reminder: { bg:'#fef9c3', text:'#a16207', dot:'#eab308' },
   };
 
   // Header row
@@ -3213,7 +3223,7 @@ function renderCalGrid(trainings, todos, announcements) {
 
     const todayNum = isToday ? `<span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--blue-600);color:#fff;font-size:0.78rem;font-weight:800">${day}</span>` : `<span style="font-size:0.8rem;font-weight:600;color:var(--text)">${day}</span>`;
 
-    html += `<div onclick="showDayPanel('${ds}', ${JSON.stringify(evs).replace(/'/g,'\\x27')})"
+    html += `<div onclick="showDayPanel('${ds}')"
       style="border-right:${borderRight};border-bottom:1px solid var(--border);padding:6px 4px;min-height:90px;cursor:pointer;transition:background 0.14s;background:${isToday?'#eff6ff':'var(--surface)'};overflow:hidden"
       onmouseover="this.style.background='${isToday?'#dbeafe':'#f5f9ff'}'" onmouseout="this.style.background='${isToday?'#eff6ff':'var(--surface)'}'">
       <div style="margin-bottom:4px">${todayNum}</div>
@@ -3235,45 +3245,59 @@ function renderCalGrid(trainings, todos, announcements) {
 
   html += '</div>';
   document.getElementById('cal-grid').innerHTML = html;
-  // Hide day panel when navigating
-  document.getElementById('cal-day-panel').style.display = 'none';
+  // Reset day panel to placeholder when navigating
+  document.getElementById('cal-day-panel-title').textContent = '— CLICK A DATE TO SEE EVENTS —';
+  document.getElementById('cal-day-panel-list').innerHTML = '<div style="color:var(--text-muted);font-size:0.85rem">Select any date on the calendar above.</div>';
 }
 
-function showDayPanel(dateStr, evs) {
+function showDayPanel(dateStr) {
   const panel = document.getElementById('cal-day-panel');
   const title = document.getElementById('cal-day-panel-title');
   const list = document.getElementById('cal-day-panel-list');
+  const evs = _calEventMap[dateStr] || [];
   const d = new Date(dateStr+'T00:00:00');
-  title.textContent = d.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  title.textContent = d.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).toUpperCase();
   const typeColors = {
     urgent:   { bg:'#fee2e2', text:'#b91c1c', border:'#ef4444', label:'Urgent / Overdue' },
     todo:     { bg:'#fffbeb', text:'#b45309', border:'#f59e0b', label:'To-Do' },
     training: { bg:'#eff6ff', text:'#1d4ed8', border:'#3b82f6', label:'Training' },
     announce: { bg:'#f0fdf4', text:'#15803d', border:'#22c55e', label:'Announcement' },
     event:    { bg:'#f5f3ff', text:'#7e22ce', border:'#a855f7', label:'Event' },
+    reminder: { bg:'#fef9c3', text:'#a16207', border:'#eab308', label:'🔔 Event Reminder' },
   };
+  const isOfficer = currentRole === 'officer';
   if (!evs.length) {
-    const isOfficer = currentRole === 'officer';
-    list.innerHTML = `<div style="color:var(--text-muted);font-size:0.85rem;padding:8px 0">No events on this day.${isOfficer?' <a href="javascript:void(0)" style="color:var(--blue-600);font-weight:600" onclick="openCalEventModal(\''+dateStr+'\')">+ Add one</a>':''}</div>`;
+    list.innerHTML = `<div style="color:var(--text-muted);font-size:0.85rem;padding:4px 0">No events on this day.${isOfficer?' <a href="javascript:void(0)" style="color:var(--blue-600);font-weight:600" onclick="openCalEventModal(\''+dateStr+'\')">+ Add one</a>':''}</div>`;
   } else {
+    const addBtn = isOfficer ? `<div style="margin-top:10px"><a href="javascript:void(0)" style="color:var(--blue-600);font-size:0.82rem;font-weight:600" onclick="openCalEventModal('${dateStr}')">+ Add event</a></div>` : '';
     list.innerHTML = evs.map(e => {
       const c = typeColors[e.type]||typeColors.event;
-      const deleteBtn = (currentRole==='officer' && e.evId) ? `<button onclick="deleteCalEvent(${e.evId})" style="background:none;border:1px solid #fca5a5;color:#ef4444;border-radius:5px;padding:2px 6px;font-size:0.72rem;cursor:pointer;margin-left:auto">🗑</button>` : '';
-      const reminderHtml = e.reminder_date ? `<div style="margin-top:4px;display:inline-flex;align-items:center;gap:4px;background:#fef3c7;color:#b45309;border-radius:6px;padding:2px 8px;font-size:0.7rem;font-weight:600">🔔 Reminder set: ${fmtDate(e.reminder_date)}</div>` : '';
-      const notesHtml = e.notes ? `<div style="margin-top:4px;font-size:0.75rem;color:var(--text-muted)">${e.notes}</div>` : '';
-      return `<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border-radius:9px;background:${c.bg};border-left:4px solid ${c.border};margin-bottom:8px">
-        <div style="flex:1">
-          <div style="font-weight:700;color:${c.text};font-size:0.9rem">${e.title}</div>
-          <div style="font-size:0.72rem;color:var(--text-muted);margin-top:2px">${c.label}</div>
+      const isReminder = e.type === 'reminder';
+      const canDelete = isOfficer && e.evId && !isReminder;
+      const deleteBtn = canDelete
+        ? `<button onclick="deleteCalEvent(${e.evId})" title="Delete event"
+            style="flex-shrink:0;background:none;border:1px solid #fca5a5;color:#ef4444;border-radius:6px;padding:3px 9px;font-size:0.72rem;cursor:pointer;transition:background 0.15s"
+            onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='none'">🗑 Delete</button>`
+        : '';
+      const reminderBadge = (!isReminder && e.reminder_date)
+        ? `<span style="display:inline-flex;align-items:center;gap:3px;background:#fef3c7;color:#b45309;border-radius:5px;padding:1px 7px;font-size:0.68rem;font-weight:600;margin-left:6px">🔔 ${fmtDate(e.reminder_date)}</span>`
+        : '';
+      const notesHtml = e.notes ? `<div style="margin-top:3px;font-size:0.75rem;color:var(--text-muted)">${e.notes}</div>` : '';
+      return `<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:9px;background:${c.bg};border-left:4px solid ${c.border};margin-bottom:8px">
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px">
+            <span style="font-weight:700;color:${c.text};font-size:0.88rem">${e.title}</span>
+            ${reminderBadge}
+          </div>
+          <div style="font-size:0.7rem;color:var(--text-muted);margin-top:2px">${c.label}</div>
           ${notesHtml}
-          ${reminderHtml}
         </div>
         ${deleteBtn}
       </div>`;
-    }).join('');
+    }).join('') + addBtn;
   }
   panel.style.display = 'block';
-  panel.scrollIntoView({ behavior:'smooth', block:'nearest' });
+  // no scrollIntoView — panel is always visible below the grid
 }
 
 function openCalEventModal(prefillDate) {
@@ -3391,22 +3415,17 @@ async function summarizeAnnouncement(id, title, message) {
     </div>`;
 
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('/api/public/ai-summarize', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 1000,
-        messages: [{
-          role: 'user',
-          content: `Summarize this QC team announcement in 2-3 concise bullet points in the same language as the announcement. Focus on key actions, deadlines, or information the team needs to know. Keep each bullet short (max 20 words). Return only the bullet points, starting each with •.\n\nTitle: ${title}\nMessage: ${message}`
-        }]
+        mode: 'announcement',
+        query: title,
+        items: [{ type: 'announcement', title, detail: message }]
       })
     });
-
-    const data = await response.json();
-    if (data.error) throw new Error(data.error.message);
-    const text = (data.content||[]).map(c=>c.text||'').join('').trim();
+    const data = await res.json();
+    const text = (data.summary || data.error || 'Could not generate summary').trim();
 
     summaryEl.innerHTML = `
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:7px">
