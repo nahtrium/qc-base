@@ -2654,8 +2654,9 @@ async function saveSpec() {
     last_updated_at: new Date().toISOString()
   };
   if (!row.product_name) { showToast('Product name is required','error'); return; }
-  if (id) { await dbUpdate('product_specifications', parseInt(id), row); showToast('Spec updated!','success'); }
-  else { await dbInsert('product_specifications', row); showToast('Spec added!','success'); }
+  let result;
+  if (id) { result = await dbUpdate('product_specifications', parseInt(id), row); if (!result) return; showToast('Spec updated!','success'); }
+  else { result = await dbInsert('product_specifications', row); if (!result) return; showToast('Spec added!','success'); }
   closeModal('specs'); loadSpecsPage(); loadDashboard();
 }
 
@@ -3070,14 +3071,25 @@ function renderCalendarTable() {
       const key = prod.name+'||'+i;
       const c = _sensoryCells[key];
       const hasC = c && (c.text||'').trim();
-      const dot = hasC
-        ? `<span title="${(c.text||'').slice(0,60).replace(/"/g,'&quot;')}" style="display:inline-block;width:8px;height:8px;border-radius:99px;background:var(--blue-500)"></span>`
-        : '<span style="color:var(--text-muted);font-size:0.8rem">–</span>';
-      return `<td style="text-align:center;cursor:pointer" onclick="openCalendarCell(${JSON.stringify(prod.name)}, ${i})">${dot}</td>`;
+      const inner = hasC
+        ? `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#3b82f6;vertical-align:middle"></span>`
+        : `<span style="color:#94a3b8;font-size:1.2rem;line-height:1">+</span>`;
+      return `<td data-prod="${prod.name.replace(/"/g,'&quot;')}" data-month="${i}"
+        style="text-align:center;cursor:pointer;padding:12px 4px;transition:background 0.15s"
+        onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background=''"
+        title="${prod.name} — ${m} 2026">${inner}</td>`;
     }).join('');
-    const del = isField ? '' : `<button class="btn btn-secondary btn-sm officer-only" style="margin-left:6px;padding:2px 6px" onclick="event.stopPropagation();removeCalendarProduct(${JSON.stringify(prod.name)})" title="Remove">✕</button>`;
-    return `<tr><td style="font-weight:600;position:sticky;left:0;background:var(--surface)">${prod.name}${del}</td>${cells}</tr>`;
+    const del = isField ? '' : `<button class="btn btn-secondary btn-sm" style="margin-left:6px;padding:2px 6px;font-size:0.7rem" data-remove="${prod.name.replace(/"/g,'&quot;')}" title="Remove product">✕</button>`;
+    return `<tr><td style="font-weight:600;position:sticky;left:0;background:var(--surface);white-space:nowrap">${prod.name}${del}</td>${cells}</tr>`;
   }).join('');
+
+  // Attach clicks via event delegation on tbody
+  tbody.onclick = function(e) {
+    const td = e.target.closest('td[data-prod]');
+    const removeBtn = e.target.closest('button[data-remove]');
+    if (removeBtn) { e.stopPropagation(); removeCalendarProduct(removeBtn.dataset.remove); return; }
+    if (td) { openCalendarCell(td.dataset.prod, parseInt(td.dataset.month)); }
+  };
 }
 
 function openCalendarCell(prodName, monthIdx) {
