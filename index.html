@@ -619,6 +619,17 @@
       min-height: 80px;
       resize: vertical;
     }
+
+    /* ── RICH TEXT EDITOR ──────────────────────────────────── */
+    .rte-wrap { border: 1.5px solid var(--border); border-radius: var(--radius); overflow: hidden; background: var(--surface); transition: border-color 0.15s; }
+    .rte-wrap:focus-within { border-color: var(--blue-500); box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+    .rte-toolbar { display: flex; gap: 2px; padding: 6px 8px; background: #f8fafc; border-bottom: 1px solid var(--border); }
+    .rte-btn { background: none; border: 1px solid transparent; border-radius: 5px; width: 28px; height: 28px; cursor: pointer; font-size: 0.82rem; display: flex; align-items: center; justify-content: center; color: var(--text); transition: all 0.12s; }
+    .rte-btn:hover { background: var(--blue-50, #eff6ff); border-color: var(--border); }
+    .rte-btn.active { background: var(--blue-100, #dbeafe); border-color: var(--blue-300, #93c5fd); color: var(--blue-700, #1d4ed8); }
+    .rte-body { min-height: 100px; padding: 10px 12px; outline: none; font-size: 0.9rem; line-height: 1.6; color: var(--text); font-family: inherit; }
+    .rte-body:empty:before { content: attr(data-placeholder); color: var(--text-muted); pointer-events: none; }
+
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
     .form-actions {
       display: flex;
@@ -1586,7 +1597,14 @@
     </div>
     <div class="form-group">
       <label class="form-label">Notes</label>
-      <textarea class="form-input form-textarea" id="td-notes" placeholder="Additional notes..."></textarea>
+      <div class="rte-wrap">
+        <div class="rte-toolbar" id="rte-toolbar-td">
+          <button type="button" class="rte-btn" data-cmd="bold" data-rte="td-notes" title="Bold (Ctrl+B)"><b>B</b></button>
+          <button type="button" class="rte-btn" data-cmd="italic" data-rte="td-notes" title="Italic (Ctrl+I)"><i>I</i></button>
+          <button type="button" class="rte-btn" data-cmd="underline" data-rte="td-notes" title="Underline (Ctrl+U)"><u>U</u></button>
+        </div>
+        <div class="rte-body form-input" id="td-notes" contenteditable="true" data-placeholder="Additional notes..."></div>
+      </div>
     </div>
     <div class="form-group">
       <label class="form-label">Mention QC Field <span style="font-weight:400;color:var(--text-muted)">(optional — they'll see this in their notifications)</span></label>
@@ -1637,7 +1655,14 @@
     </div>
     <div class="form-group">
       <label class="form-label">Summary</label>
-      <textarea class="form-input form-textarea" id="sp-summary" placeholder="Brief summary of this specification..."></textarea>
+      <div class="rte-wrap">
+        <div class="rte-toolbar" id="rte-toolbar-sp">
+          <button type="button" class="rte-btn" data-cmd="bold" data-rte="sp-summary" title="Bold (Ctrl+B)"><b>B</b></button>
+          <button type="button" class="rte-btn" data-cmd="italic" data-rte="sp-summary" title="Italic (Ctrl+I)"><i>I</i></button>
+          <button type="button" class="rte-btn" data-cmd="underline" data-rte="sp-summary" title="Underline (Ctrl+U)"><u>U</u></button>
+        </div>
+        <div class="rte-body form-input" id="sp-summary" contenteditable="true" data-placeholder="Brief summary of this specification..."></div>
+      </div>
     </div>
     <div class="form-actions">
       <button class="btn btn-secondary" onclick="closeModal('specs')">Cancel</button>
@@ -1749,7 +1774,14 @@
     </div>
     <div class="form-group">
       <label class="form-label">Message *</label>
-      <textarea class="form-input form-textarea" id="an-message" placeholder="Write the announcement details here..." rows="5"></textarea>
+      <div class="rte-wrap">
+        <div class="rte-toolbar" id="rte-toolbar-an">
+          <button type="button" class="rte-btn" data-cmd="bold" data-rte="an-message" title="Bold (Ctrl+B)"><b>B</b></button>
+          <button type="button" class="rte-btn" data-cmd="italic" data-rte="an-message" title="Italic (Ctrl+I)"><i>I</i></button>
+          <button type="button" class="rte-btn" data-cmd="underline" data-rte="an-message" title="Underline (Ctrl+U)"><u>U</u></button>
+        </div>
+        <div class="rte-body form-input" id="an-message" contenteditable="true" data-placeholder="Write the announcement details here..."></div>
+      </div>
     </div>
     <div class="form-actions">
       <button class="btn btn-secondary" onclick="closeModal('announce')">Cancel</button>
@@ -2128,8 +2160,8 @@ async function renderNotifPanel() {
   html.push('<div class="notif-group-title">📢 Announcements' + (unreadAnnounce ? ` · <span style="color:var(--green)">${unreadAnnounce} new</span>` : '') + '</div>');
   if (!recentAnnouncements.length) html.push('<div class="notif-empty" style="padding:10px 20px">No announcements yet.</div>');
   else recentAnnouncements.slice(0, 20).forEach(a => {
-    const safeMsg = (a.message||'').replace(/</g,'&lt;');
-    html.push(`<div class="notif-item announce"><div class="notif-item-title">${a.title||'(untitled)'}</div><div style="font-size:0.8rem;color:var(--text);margin:3px 0 4px;white-space:pre-wrap">${safeMsg}</div><div class="notif-item-meta">Posted by ${a.posted_by||a.last_updated_by||'—'} · ${fmtDate(a.posted_at||a.last_updated_at)}</div></div>`);
+    const safeMsg = a.message||'';
+    html.push(`<div class="notif-item announce"><div class="notif-item-title">${a.title||'(untitled)'}</div><div style="font-size:0.8rem;color:var(--text);margin:3px 0 4px">${safeMsg}</div><div class="notif-item-meta">Posted by ${a.posted_by||a.last_updated_by||'—'} · ${fmtDate(a.posted_at||a.last_updated_at)}</div></div>`);
   });
 
   if (!isField) {
@@ -2407,10 +2439,10 @@ function closeModal(type) {
   document.getElementById('modal-'+type).classList.remove('open');
   // Reset form
   if (type==='training') { ['t-id','t-trainer','t-topic','t-due','t-reminder','t-notes'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; }); document.getElementById('t-status').value='Pending'; document.getElementById('modal-training-title').textContent='Add Training'; document.querySelectorAll('#t-employee-chips .emp-chip').forEach(c=>c.classList.remove('selected')); }
-  if (type==='todo') { ['td-id','td-title','td-priority','td-assigned','td-deadline','td-notes'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; }); document.getElementById('modal-todo-title').textContent='Add Task'; clearMentions(); }
-  if (type==='specs') { ['sp-id','sp-product','sp-revision','sp-date','sp-approved','sp-link','sp-summary'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; }); document.getElementById('modal-specs-title').textContent='Add Specification'; }
+  if (type==='todo') { ['td-id','td-title','td-priority','td-assigned','td-deadline'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; }); rteClear('td-notes'); document.getElementById('modal-todo-title').textContent='Add Task'; clearMentions(); }
+  if (type==='specs') { ['sp-id','sp-product','sp-revision','sp-date','sp-approved','sp-link'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; }); rteClear('sp-summary'); document.getElementById('modal-specs-title').textContent='Add Specification'; }
   if (type==='trials') { ['tr-id','tr-product','tr-date','tr-assigned','tr-link','tr-notes'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; }); document.getElementById('tr-ai-area').style.display='none'; document.getElementById('modal-trials-title').textContent='Add Trial Report'; }
-  if (type==='announce') { ['an-title','an-message'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; }); }
+  if (type==='announce') { const _ant=document.getElementById('an-title'); if(_ant) _ant.value=''; rteClear('an-message'); }
   if (type==='calevent') { ['ce-id','ce-title','ce-date','ce-end-date','ce-reminder','ce-notes'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; }); const sel=document.getElementById('ce-type'); if(sel) sel.value='event'; document.getElementById('modal-calevent-title').textContent='📆 Add Event'; }
 }
 
@@ -2426,7 +2458,7 @@ function openAnnounceModal() {
 async function saveAnnouncement() {
   if (currentRole !== 'officer') { showToast('Only QC Officers can post announcements', 'error'); return; }
   const title = document.getElementById('an-title').value.trim();
-  const message = document.getElementById('an-message').value.trim();
+  const message = rteGet('an-message').trim();
   if (!title || !message) { showToast('Title and message are required', 'error'); return; }
   const now = new Date().toISOString();
   const row = {
@@ -2540,7 +2572,7 @@ function renderTodoTable() {
       </td>
       <td>
         <span style="${t.completion_status?'text-decoration:line-through':''}">${t.task_title}</span>
-        ${t.notes?`<div class="td-muted" style="margin-top:2px;font-size:0.72rem">${t.notes.slice(0,60)}</div>`:''}
+        ${t.notes?`<div class="td-muted" style="margin-top:2px;font-size:0.72rem">${t.notes.replace(/<[^>]+>/g,'').slice(0,60)}</div>`:''}
         ${t.mentions ? t.mentions.split(',').map(m=>m.trim()).filter(Boolean).map(m=>`<span class="mention-chip" style="margin-top:4px;font-size:0.68rem">@${m}</span>`).join(' ') : ''}
       </td>
       <td>${priorityBadge(t.priority)}</td>
@@ -2572,7 +2604,7 @@ async function saveTodo() {
     priority: document.getElementById('td-priority').value,
     assigned_person: document.getElementById('td-assigned').value,
     deadline: document.getElementById('td-deadline').value || null,
-    notes: document.getElementById('td-notes').value,
+    notes: rteGet('td-notes'),
     mentions: currentMentions.join(', '),
     completion_status: false,
     last_updated_by: currentUser,
@@ -2593,7 +2625,7 @@ function editTodo(id) {
   document.getElementById('td-priority').value = t.priority;
   document.getElementById('td-assigned').value = t.assigned_person||'';
   document.getElementById('td-deadline').value = t.deadline||'';
-  document.getElementById('td-notes').value = t.notes||'';
+  rteSet('td-notes', t.notes||'');
   // Load mentions
   currentMentions = (t.mentions||'').split(',').map(m=>m.trim()).filter(Boolean);
   renderMentionTags();
@@ -2631,7 +2663,7 @@ function renderSpecsTable() {
     <td><span class="badge info" style="background:#eff6ff;color:#2563eb">${s.revision_number||'—'}</span></td>
     <td class="td-muted">${fmtDate(s.effective_date)}</td>
     <td>${s.approved_by||'—'}</td>
-    <td style="max-width:200px;font-size:0.78rem">${s.summary||'—'}</td>
+    <td style="max-width:200px;font-size:0.78rem">${(s.summary||'—').replace(/<[^>]+>/g,'')}</td>
     <td>${s.google_drive_link?`<a href="${s.google_drive_link}" target="_blank" class="drive-link">📁 Open File</a>`:'—'}</td>
     <td class="td-muted">${s.last_updated_by||'—'}</td>
     <td class="officer-only"><div style="display:flex;gap:5px"><button class="btn btn-secondary btn-sm" onclick="editSpec(${s.id})">✏️</button>
@@ -2649,7 +2681,7 @@ async function saveSpec() {
     effective_date: document.getElementById('sp-date').value || null,
     approved_by: document.getElementById('sp-approved').value,
     google_drive_link: document.getElementById('sp-link').value,
-    summary: document.getElementById('sp-summary').value,
+    summary: rteGet('sp-summary'),
     last_updated_by: currentUser,
     last_updated_at: new Date().toISOString()
   };
@@ -2669,7 +2701,7 @@ function editSpec(id) {
   document.getElementById('sp-date').value = s.effective_date||'';
   document.getElementById('sp-approved').value = s.approved_by||'';
   document.getElementById('sp-link').value = s.google_drive_link||'';
-  document.getElementById('sp-summary').value = s.summary||'';
+  rteSet('sp-summary', s.summary||'');
   document.getElementById('modal-specs-title').textContent = 'Edit Specification';
   openModal('specs');
 }
@@ -3194,7 +3226,67 @@ loadTrainingPage = async function() {
   renderCalendarTable();
 };;
 
-/* ── GOOGLE-CALENDAR STYLE EVENT CALENDAR ─────────────────── */
+/* ── RICH TEXT EDITOR ENGINE ────────────────────────────── */
+(function initRTE() {
+  const RTE_IDS = ['an-message', 'td-notes', 'sp-summary'];
+
+  // Toolbar button clicks
+  document.addEventListener('click', e => {
+    const btn = e.target.closest('.rte-btn[data-cmd]');
+    if (!btn) return;
+    e.preventDefault();
+    const cmd = btn.dataset.cmd;
+    const targetId = btn.dataset.rte;
+    const el = document.getElementById(targetId);
+    if (el) el.focus();
+    document.execCommand(cmd, false, null);
+    updateRteToolbar(targetId);
+  });
+
+  // Keyboard shortcuts inside any RTE field
+  document.addEventListener('keydown', e => {
+    const el = e.target.closest('.rte-body');
+    if (!el) return;
+    if ((e.ctrlKey || e.metaKey)) {
+      if (e.key === 'b' || e.key === 'B') { e.preventDefault(); document.execCommand('bold', false, null); updateRteToolbar(el.id); }
+      if (e.key === 'i' || e.key === 'I') { e.preventDefault(); document.execCommand('italic', false, null); updateRteToolbar(el.id); }
+      if (e.key === 'u' || e.key === 'U') { e.preventDefault(); document.execCommand('underline', false, null); updateRteToolbar(el.id); }
+    }
+  });
+
+  // Update toolbar active states on selection change
+  document.addEventListener('selectionchange', () => {
+    RTE_IDS.forEach(id => {
+      const el = document.getElementById(id);
+      if (el && el.matches(':focus-within, :focus')) updateRteToolbar(id);
+    });
+  });
+})();
+
+function updateRteToolbar(rteId) {
+  const toolbarMap = { 'an-message': 'rte-toolbar-an', 'td-notes': 'rte-toolbar-td', 'sp-summary': 'rte-toolbar-sp' };
+  const toolbar = document.getElementById(toolbarMap[rteId]);
+  if (!toolbar) return;
+  toolbar.querySelectorAll('.rte-btn[data-cmd]').forEach(btn => {
+    btn.classList.toggle('active', document.queryCommandState(btn.dataset.cmd));
+  });
+}
+
+// Helpers to read/write RTE fields (replaces .value for contenteditable)
+function rteGet(id) {
+  const el = document.getElementById(id);
+  if (!el) return '';
+  return el.tagName === 'TEXTAREA' ? el.value : el.innerHTML;
+}
+function rteSet(id, html) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (el.tagName === 'TEXTAREA') el.value = html;
+  else el.innerHTML = html || '';
+}
+function rteClear(id) { rteSet(id, ''); }
+
+
 let _calPageDate = new Date(); // current month in view
 let _calEvents = []; // custom events stored in demoData.cal_events
 let _calEventMap = {}; // date string -> events array, for safe day panel lookup
@@ -3474,7 +3566,7 @@ function renderAnnouncePage() {
   empty.style.display='none';
   const isOfficer = currentRole === 'officer';
   wrap.innerHTML = sorted.map(a => {
-    const safeMsg = (a.message||'').replace(/</g,'&lt;').replace(/\n/g,'<br>');
+    const safeMsg = a.message||'';
     const typeColor = {'urgent':'#fee2e2','training':'#eff6ff','event':'#f5f3ff','todo':'#fffbeb'}['announce']||'#f0fdf4';
     return `
     <div style="border:1px solid var(--border);border-left:4px solid var(--green);border-radius:10px;padding:14px;background:#f0fdf4" id="announce-card-${a.id}">
