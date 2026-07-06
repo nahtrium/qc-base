@@ -2061,20 +2061,20 @@ async function onGlobalSearch() {
   };
   const total = matches.announce.length + matches.todo.length + matches.specs.length + matches.training.length;
   if (!total) {
-    box.innerHTML = '<div class="search-ai">No matches for <strong>'+q+'</strong></div>';
+    box.innerHTML = '<div class="search-ai">No matches for <strong>'+q+'<\/strong><\/div>';
     box.classList.add('active'); return;
   }
   const section = (title, icon, items, fmt) => items.length ? `
     <div class="search-section">
-      <div class="search-section-title">${title} · ${items.length}</div>
+      <div class="search-section-title">${title} · ${items.length}<\/div>
       ${items.slice(0,5).map(fmt(icon)).join('')}
-    </div>` : '';
+    <\/div>` : '';
   box.innerHTML = `
-    <div class="search-ai" id="search-ai-box"><div class="ai-label">🤖 AI Summary</div><div id="search-ai-text">Summarizing…</div></div>
-    ${section('Announcements','📢', matches.announce, ic => a => `<div class="search-item"><span class="search-item-icon">${ic}</span><div><div class="search-item-title">${a.title||'(untitled)'}</div><div class="search-item-meta">${(a.message||'').slice(0,80)} · by ${a.posted_by||'—'}</div></div></div>`)}
-    ${section('To-Do List','✅', matches.todo, ic => t => `<div class="search-item"><span class="search-item-icon">${ic}</span><div><div class="search-item-title">${t.task_title}</div><div class="search-item-meta">${t.priority||''} · ${t.assigned_person||'—'}</div></div></div>`)}
-    ${section('Product Specs','📋', matches.specs, ic => s => `<div class="search-item"><span class="search-item-icon">${ic}</span><div><div class="search-item-title">${s.product_name} <span class="search-item-meta">(${s.revision_number||'—'})</span></div><div class="search-item-meta">${s.summary||''}</div></div></div>`)}
-    ${section('Training','📅', matches.training, ic => t => `<div class="search-item"><span class="search-item-icon">${ic}</span><div><div class="search-item-title">${t.training_topic}</div><div class="search-item-meta">${t.employee_name||'—'} · ${t.status||''}</div></div></div>`)}
+    <div class="search-ai" id="search-ai-box"><div class="ai-label">🤖 AI Summary<\/div><div id="search-ai-text">Summarizing…<\/div><\/div>
+    ${section('Announcements','📢', matches.announce, ic => a => `<div class="search-item"><span class="search-item-icon">${ic}<\/span><div><div class="search-item-title">${a.title||'(untitled)'}<\/div><div class="search-item-meta">${(a.message||'').slice(0,80)} · by ${a.posted_by||'—'}<\/div><\/div><\/div>`)}
+    ${section('To-Do List','✅', matches.todo, ic => t => `<div class="search-item"><span class="search-item-icon">${ic}<\/span><div><div class="search-item-title">${t.task_title}<\/div><div class="search-item-meta">${t.priority||''} · ${t.assigned_person||'—'}<\/div><\/div><\/div>`)}
+    ${section('Product Specs','📋', matches.specs, ic => s => `<div class="search-item"><span class="search-item-icon">${ic}<\/span><div><div class="search-item-title">${s.product_name} <span class="search-item-meta">(${s.revision_number||'—'})<\/span><\/div><div class="search-item-meta">${(s.summary||'').replace(/<[^>]+>/g,'')}<\/div><\/div><\/div>`)}
+    ${section('Training','📅', matches.training, ic => t => `<div class="search-item"><span class="search-item-icon">${ic}<\/span><div><div class="search-item-title">${t.training_topic}<\/div><div class="search-item-meta">${t.employee_name||'—'} · ${t.status||''}<\/div><\/div><\/div>`)}
   `;
   box.classList.add('active');
   // AI summarize (debounced)
@@ -2083,7 +2083,7 @@ async function onGlobalSearch() {
     try {
       const items = [
         ...matches.todo.slice(0,5).map(t => ({type:'todo', title:t.task_title, detail:t.notes||''})),
-        ...matches.specs.slice(0,5).map(s => ({type:'spec', title:`${s.product_name} ${s.revision_number||''}`, detail:s.summary||''})),
+        ...matches.specs.slice(0,5).map(s => ({type:'spec', title:`${s.product_name} ${s.revision_number||''}`, detail:(s.summary||'').replace(/<[^>]+>/g,'')})),
         ...matches.training.slice(0,5).map(t => ({type:'training', title:t.training_topic, detail:t.employee_name||''}))
       ];
       const res = await fetch('/api/public/ai-summarize', {
@@ -2117,7 +2117,7 @@ async function toggleNotifPanel(force) {
 }
 async function renderNotifPanel() {
   const body = document.getElementById('notif-body');
-  body.innerHTML = '<div class="notif-empty">Loading…</div>';
+  body.innerHTML = '<div class="notif-empty">Loading…<\/div>';
   const [trainings, todosAll, specsAll, announcementsAll] = await Promise.all([
     dbGet('training_schedules'), dbGet('todos'), dbGet('product_specifications'), dbGet('announcements')
   ]);
@@ -2157,30 +2157,30 @@ async function renderNotifPanel() {
   const html = [];
 
   // Announcements first — everyone sees these
-  html.push('<div class="notif-group-title">📢 Announcements' + (unreadAnnounce ? ` · <span style="color:var(--green)">${unreadAnnounce} new</span>` : '') + '</div>');
-  if (!recentAnnouncements.length) html.push('<div class="notif-empty" style="padding:10px 20px">No announcements yet.</div>');
+  html.push('<div class="notif-group-title">📢 Announcements' + (unreadAnnounce ? ` · <span style="color:var(--green)">${unreadAnnounce} new<\/span>` : '') + '<\/div>');
+  if (!recentAnnouncements.length) html.push('<div class="notif-empty" style="padding:10px 20px">No announcements yet.<\/div>');
   else recentAnnouncements.slice(0, 20).forEach(a => {
-    const safeMsg = a.message||'';
-    html.push(`<div class="notif-item announce"><div class="notif-item-title">${a.title||'(untitled)'}</div><div style="font-size:0.8rem;color:var(--text);margin:3px 0 4px">${safeMsg}</div><div class="notif-item-meta">Posted by ${a.posted_by||a.last_updated_by||'—'} · ${fmtDate(a.posted_at||a.last_updated_at)}</div></div>`);
+    const safeMsg = (msg => msg.includes('<') ? msg : msg.replace(/\\n/g,'<br>').replace(/\n/g,'<br>'))(a.message||'');
+    html.push(`<div class="notif-item announce"><div class="notif-item-title">${a.title||'(untitled)'}<\/div><div style="font-size:0.8rem;color:var(--text);margin:3px 0 4px">${safeMsg}<\/div><div class="notif-item-meta">Posted by ${a.posted_by||a.last_updated_by||'—'} · ${fmtDate(a.posted_at||a.last_updated_at)}<\/div><\/div>`);
   });
 
   if (!isField) {
-    html.push('<div class="notif-group-title">📅 Training Schedule</div>');
-    if (!myTrainings.length) html.push('<div class="notif-empty" style="padding:10px 20px">No trainings assigned.</div>');
-    else myTrainings.forEach(t => html.push(`<div class="notif-item training"><div class="notif-item-title">${t.training_topic}</div><div class="notif-item-meta">${t.status||'Pending'} · Due ${fmtDate(t.due_date)} · Trainer: ${t.trainer||'—'}</div></div>`));
+    html.push('<div class="notif-group-title">📅 Training Schedule<\/div>');
+    if (!myTrainings.length) html.push('<div class="notif-empty" style="padding:10px 20px">No trainings assigned.<\/div>');
+    else myTrainings.forEach(t => html.push(`<div class="notif-item training"><div class="notif-item-title">${t.training_topic}<\/div><div class="notif-item-meta">${t.status||'Pending'} · Due ${fmtDate(t.due_date)} · Trainer: ${t.trainer||'—'}<\/div><\/div>`));
   }
 
-  html.push('<div class="notif-group-title">✅ ' + (isField ? 'Tasks for QC Field' : 'Assigned Tasks') + '</div>');
-  if (!myTasks.length) html.push('<div class="notif-empty" style="padding:10px 20px">No open tasks 🎉</div>');
+  html.push('<div class="notif-group-title">✅ ' + (isField ? 'Tasks for QC Field' : 'Assigned Tasks') + '<\/div>');
+  if (!myTasks.length) html.push('<div class="notif-empty" style="padding:10px 20px">No open tasks 🎉<\/div>');
   else myTasks.forEach(t => {
     const mentionParts = (t.mentions||'').split(',').map(m=>m.trim()).filter(Boolean);
-    const mentionHtml = mentionParts.length ? `<span style="color:var(--blue-700);font-weight:600"> ${mentionParts.map(m=>'@'+m).join(' ')}</span>` : '';
-    html.push(`<div class="notif-item task"><div class="notif-item-title">${t.task_title}${mentionHtml}</div><div class="notif-item-meta">${t.priority||'Medium'} · Due ${fmtDate(t.deadline)} · By ${t.last_updated_by||'—'}</div></div>`);
+    const mentionHtml = mentionParts.length ? `<span style="color:var(--blue-700);font-weight:600"> ${mentionParts.map(m=>'@'+m).join(' ')}<\/span>` : '';
+    html.push(`<div class="notif-item task"><div class="notif-item-title">${t.task_title}${mentionHtml}<\/div><div class="notif-item-meta">${t.priority||'Medium'} · Due ${fmtDate(t.deadline)} · By ${t.last_updated_by||'—'}<\/div><\/div>`);
   });
 
-  html.push('<div class="notif-group-title">📢 Product Spec Updates</div>');
-  if (!recentSpecs.length) html.push('<div class="notif-empty" style="padding:10px 20px">No recent updates.</div>');
-  else recentSpecs.forEach(s => html.push(`<div class="notif-item announce"><div class="notif-item-title">${s.product_name} — ${s.revision_number||''}</div><div class="notif-item-meta">${s.summary||'(no summary)'} · Updated ${fmtDate(s.last_updated_at)} by ${s.last_updated_by||'—'}</div></div>`));
+  html.push('<div class="notif-group-title">📢 Product Spec Updates<\/div>');
+  if (!recentSpecs.length) html.push('<div class="notif-empty" style="padding:10px 20px">No recent updates.<\/div>');
+  else recentSpecs.forEach(s => html.push(`<div class="notif-item announce"><div class="notif-item-title">${s.product_name} — ${s.revision_number||''}<\/div><div class="notif-item-meta">${(s.summary||'(no summary)').replace(/<[^>]+>/g,'')} · Updated ${fmtDate(s.last_updated_at)} by ${s.last_updated_by||'—'}<\/div><\/div>`));
 
   // Calendar event reminders (next 7 days)
   const todayN = new Date(); todayN.setHours(0,0,0,0);
@@ -2192,12 +2192,12 @@ async function renderNotifPanel() {
   }).sort((a,b) => new Date(a.reminder_date) - new Date(b.reminder_date));
 
   if (upcomingCalReminders.length) {
-    html.push('<div class="notif-group-title">🔔 Calendar Reminders</div>');
+    html.push('<div class="notif-group-title">🔔 Calendar Reminders<\/div>');
     upcomingCalReminders.forEach(e => {
       const rd = new Date(e.reminder_date); rd.setHours(0,0,0,0);
       const diff = Math.round((rd - todayN)/(1000*60*60*24));
       const when = diff === 0 ? '⚡ Today!' : diff === 1 ? '🌅 Tomorrow' : `📅 in ${diff} day(s)`;
-      html.push(`<div class="notif-item task"><div class="notif-item-title">📆 ${e.title}</div><div class="notif-item-meta">${when} · Event on ${fmtDate(e.date)}${e.notes ? ' · '+e.notes.slice(0,50) : ''}</div></div>`);
+      html.push(`<div class="notif-item task"><div class="notif-item-title">📆 ${e.title}<\/div><div class="notif-item-meta">${when} · Event on ${fmtDate(e.date)}${e.notes ? ' · '+e.notes.slice(0,50) : ''}<\/div><\/div>`);
     });
   }
 
@@ -2339,7 +2339,7 @@ async function loadDashboard() {
   });
   // Recently updated specs in notification center
   const recentSpecs5 = [...specs].sort((a,b)=>new Date(b.last_updated_at||0)-new Date(a.last_updated_at||0)).slice(0,5);
-  recentSpecs5.forEach(s => alerts.push({ type:'spec', text:`📋 Spec Updated: ${s.product_name} ${s.revision_number||''}`, sub:`${s.summary||'(no summary)'} · by ${s.last_updated_by||'—'} on ${fmtDate(s.last_updated_at)}` }));
+  recentSpecs5.forEach(s => alerts.push({ type:'spec', text:`📋 Spec Updated: ${s.product_name} ${s.revision_number||''}`, sub:`${(s.summary||'(no summary)').replace(/<[^>]+>/g,'')} · by ${s.last_updated_by||'—'} on ${fmtDate(s.last_updated_at)}` }));
 
   // Calendar event reminders
   calEventsRaw.filter(e => e.reminder_date).forEach(e => {
@@ -2353,32 +2353,32 @@ async function loadDashboard() {
 
   const alertsEl = document.getElementById('dash-alerts');
   if (!alerts.length) {
-    alertsEl.innerHTML = `<div class="empty-state" style="padding:24px"><div class="empty-icon">🎉</div><p>All clear! No urgent alerts.</p></div>`;
+    alertsEl.innerHTML = `<div class="empty-state" style="padding:24px"><div class="empty-icon">🎉<\/div><p>All clear! No urgent alerts.<\/p><\/div>`;
   } else {
     alertsEl.innerHTML = alerts.map(a => `
       <div class="alert-item ${a.type === 'spec' ? 'info' : a.type}">
-        <div class="alert-dot ${a.type === 'spec' ? 'info' : a.type}"></div>
-        <div><div class="alert-text">${a.text}</div><div class="alert-sub">${a.sub}</div></div>
-      </div>`).join('');
+        <div class="alert-dot ${a.type === 'spec' ? 'info' : a.type}"><\/div>
+        <div><div class="alert-text">${a.text}<\/div><div class="alert-sub">${a.sub}<\/div><\/div>
+      <\/div>`).join('');
   }
 
   // Upcoming trainings
   const upcomingT = trainings.filter(t=>t.status!=='Completed').sort((a,b)=>new Date(a.due_date)-new Date(b.due_date)).slice(0,5);
   document.getElementById('dash-trainings').innerHTML = upcomingT.length ?
     upcomingT.map(t=>`<div class="recent-item">
-      <div class="recent-dot" style="background:${t.status==='Overdue'?'var(--red)':'var(--blue-400)'}"></div>
-      <div style="flex:1"><div class="recent-text">${t.employee_name} — ${t.training_topic}</div>
-      <div class="recent-meta">${statusBadge(t.status)} Due: ${fmtDate(t.due_date)}</div></div></div>`).join('') :
-    `<div class="empty-state" style="padding:24px"><p>No upcoming trainings</p></div>`;
+      <div class="recent-dot" style="background:${t.status==='Overdue'?'var(--red)':'var(--blue-400)'}"><\/div>
+      <div style="flex:1"><div class="recent-text">${t.employee_name} — ${t.training_topic}<\/div>
+      <div class="recent-meta">${statusBadge(t.status)} Due: ${fmtDate(t.due_date)}<\/div><\/div><\/div>`).join('') :
+    `<div class="empty-state" style="padding:24px"><p>No upcoming trainings<\/p><\/div>`;
 
   // Urgent todos
   const urgentTodos = todos.filter(t=>!t.completion_status && (t.priority==='Urgent'||t.priority==='High')).slice(0,5);
   document.getElementById('dash-todos').innerHTML = urgentTodos.length ?
     urgentTodos.map(t=>`<div class="recent-item">
-      <div class="recent-dot" style="background:${t.priority==='Urgent'?'var(--red)':'var(--amber)'}"></div>
-      <div style="flex:1"><div class="recent-text">${t.task_title}</div>
-      <div class="recent-meta">${priorityBadge(t.priority)} ${t.assigned_person ? '· '+t.assigned_person:''} · Due: ${fmtDate(t.deadline)}</div></div></div>`).join('') :
-    `<div class="empty-state" style="padding:24px"><p>No urgent tasks 🎉</p></div>`;
+      <div class="recent-dot" style="background:${t.priority==='Urgent'?'var(--red)':'var(--amber)'}"><\/div>
+      <div style="flex:1"><div class="recent-text">${t.task_title}<\/div>
+      <div class="recent-meta">${priorityBadge(t.priority)} ${t.assigned_person ? '· '+t.assigned_person:''} · Due: ${fmtDate(t.deadline)}<\/div><\/div><\/div>`).join('') :
+    `<div class="empty-state" style="padding:24px"><p>No urgent tasks 🎉<\/p><\/div>`;
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -2416,19 +2416,19 @@ function renderTrainingTable() {
   tbody.innerHTML = rows.map(t => {
     const overdue = t.status !== 'Completed' && t.due_date && new Date(t.due_date) < today;
     return `<tr class="${overdue?'overdue-row':''}">
-      <td style="padding:8px 10px"><strong>${t.employee_name.split(',').map(n=>`<span style="display:inline-block;background:var(--blue-100);color:var(--blue-800);border:1px solid var(--blue-300);border-radius:12px;padding:1px 7px;font-size:0.72rem;font-weight:600;margin:1px;white-space:nowrap">${n.trim()}</span>`).join('')}</strong></td>
-      <td style="padding:8px 10px;font-size:0.8rem">${t.training_topic}</td>
-      <td style="padding:8px 10px" class="td-muted">${t.trainer||'—'}</td>
+      <td style="padding:8px 10px"><strong>${t.employee_name.split(',').map(n=>`<span style="display:inline-block;background:var(--blue-100);color:var(--blue-800);border:1px solid var(--blue-300);border-radius:12px;padding:1px 7px;font-size:0.72rem;font-weight:600;margin:1px;white-space:nowrap">${n.trim()}<\/span>`).join('')}<\/strong><\/td>
+      <td style="padding:8px 10px;font-size:0.8rem">${t.training_topic}<\/td>
+      <td style="padding:8px 10px" class="td-muted">${t.trainer||'—'}<\/td>
       <td style="padding:8px 10px" class="${overdue?'':'td-muted'}" style="${overdue?'color:var(--red);font-weight:700':''}">
-        <span style="${overdue?'color:var(--red);font-weight:700':''}">${fmtDate(t.due_date)}${overdue?' ⚠️':''}</span>
-      </td>
-      <td style="padding:8px 10px" class="td-muted">${fmtDate(t.reminder_date)}</td>
-      <td style="padding:8px 10px">${statusBadge(t.status)}</td>
-      <td style="padding:6px 8px" class="officer-only"><div style="display:flex;gap:4px"><button class="btn btn-secondary btn-sm" onclick="editTraining(${t.id})">✏️</button>
-          <button class="btn btn-danger btn-sm" onclick="deleteTraining(${t.id})">🗑</button>
-        </div>
-      </td>
-    </tr>`;
+        <span style="${overdue?'color:var(--red);font-weight:700':''}">${fmtDate(t.due_date)}${overdue?' ⚠️':''}<\/span>
+      <\/td>
+      <td style="padding:8px 10px" class="td-muted">${fmtDate(t.reminder_date)}<\/td>
+      <td style="padding:8px 10px">${statusBadge(t.status)}<\/td>
+      <td style="padding:6px 8px" class="officer-only"><div style="display:flex;gap:4px"><button class="btn btn-secondary btn-sm" onclick="editTraining(${t.id})">✏️<\/button>
+          <button class="btn btn-danger btn-sm" onclick="deleteTraining(${t.id})">🗑<\/button>
+        <\/div>
+      <\/td>
+    <\/tr>`;
   }).join('');
 }
 
@@ -2568,24 +2568,24 @@ function renderTodoTable() {
       <td>
         <div class="todo-check ${t.completion_status?'checked':''}" onclick="toggleTodo(${t.id})">
           ${t.completion_status?'✓':''}
-        </div>
-      </td>
+        <\/div>
+      <\/td>
       <td>
-        <span style="${t.completion_status?'text-decoration:line-through':''}">${t.task_title}</span>
-        ${t.notes?`<div class="td-muted" style="margin-top:2px;font-size:0.72rem">${t.notes.replace(/<[^>]+>/g,'').slice(0,60)}</div>`:''}
-        ${t.mentions ? t.mentions.split(',').map(m=>m.trim()).filter(Boolean).map(m=>`<span class="mention-chip" style="margin-top:4px;font-size:0.68rem">@${m}</span>`).join(' ') : ''}
-      </td>
-      <td>${priorityBadge(t.priority)}</td>
-      <td>${t.assigned_person||'—'}</td>
+        <span style="${t.completion_status?'text-decoration:line-through':''}">${t.task_title}<\/span>
+        ${t.notes?`<div class="td-muted" style="margin-top:2px;font-size:0.72rem">${t.notes.replace(/<[^>]+>/g,'').slice(0,60)}<\/div>`:''}
+        ${t.mentions ? t.mentions.split(',').map(m=>m.trim()).filter(Boolean).map(m=>`<span class="mention-chip" style="margin-top:4px;font-size:0.68rem">@${m}<\/span>`).join(' ') : ''}
+      <\/td>
+      <td>${priorityBadge(t.priority)}<\/td>
+      <td>${t.assigned_person||'—'}<\/td>
       <td class="${overdue?'':'td-muted'}" style="${overdue?'color:var(--red);font-weight:700':''}">
         ${fmtDate(t.deadline)} ${overdue?'⚠️':''}
-      </td>
-      <td class="td-muted">${t.last_updated_by||'—'}</td>
-      <td class="officer-only"><div style="display:flex;gap:5px"><button class="btn btn-secondary btn-sm" onclick="editTodo(${t.id})">✏️</button>
-          <button class="btn btn-danger btn-sm" onclick="deleteTodo(${t.id})">🗑</button>
-        </div>
-      </td>
-    </tr>`;
+      <\/td>
+      <td class="td-muted">${t.last_updated_by||'—'}<\/td>
+      <td class="officer-only"><div style="display:flex;gap:5px"><button class="btn btn-secondary btn-sm" onclick="editTodo(${t.id})">✏️<\/button>
+          <button class="btn btn-danger btn-sm" onclick="deleteTodo(${t.id})">🗑<\/button>
+        <\/div>
+      <\/td>
+    <\/tr>`;
   }).join('');
 }
 
@@ -2659,18 +2659,18 @@ function renderSpecsTable() {
   empty.style.display='none';
 
   tbody.innerHTML = rows.map(s=>`<tr>
-    <td><strong>${s.product_name}</strong></td>
-    <td><span class="badge info" style="background:#eff6ff;color:#2563eb">${s.revision_number||'—'}</span></td>
-    <td class="td-muted">${fmtDate(s.effective_date)}</td>
-    <td>${s.approved_by||'—'}</td>
-    <td style="max-width:200px;font-size:0.78rem">${(s.summary||'—').replace(/<[^>]+>/g,'')}</td>
-    <td>${s.google_drive_link?`<a href="${s.google_drive_link}" target="_blank" class="drive-link">📁 Open File</a>`:'—'}</td>
-    <td class="td-muted">${s.last_updated_by||'—'}</td>
-    <td class="officer-only"><div style="display:flex;gap:5px"><button class="btn btn-secondary btn-sm" onclick="editSpec(${s.id})">✏️</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteSpec(${s.id})">🗑</button>
-      </div>
-    </td>
-  </tr>`).join('');
+    <td><strong>${s.product_name}<\/strong><\/td>
+    <td><span class="badge info" style="background:#eff6ff;color:#2563eb">${s.revision_number||'—'}<\/span><\/td>
+    <td class="td-muted">${fmtDate(s.effective_date)}<\/td>
+    <td>${s.approved_by||'—'}<\/td>
+    <td style="max-width:200px;font-size:0.78rem">${(s.summary||'—').replace(/<[^>]+>/g,'')}<\/td>
+    <td>${s.google_drive_link?`<a href="${s.google_drive_link}" target="_blank" class="drive-link">📁 Open File<\/a>`:'—'}<\/td>
+    <td class="td-muted">${s.last_updated_by||'—'}<\/td>
+    <td class="officer-only"><div style="display:flex;gap:5px"><button class="btn btn-secondary btn-sm" onclick="editSpec(${s.id})">✏️<\/button>
+        <button class="btn btn-danger btn-sm" onclick="deleteSpec(${s.id})">🗑<\/button>
+      <\/div>
+    <\/td>
+  <\/tr>`).join('');
 }
 
 async function saveSpec() {
@@ -2729,20 +2729,20 @@ function renderTrialsTable() {
   empty.style.display='none';
 
   tbody.innerHTML = trials.map(r=>`<tr>
-    <td><strong>${r.product_name}</strong></td>
-    <td class="td-muted">${fmtDate(r.trial_date)}</td>
-    <td>${r.assigned_person||'—'}</td>
+    <td><strong>${r.product_name}<\/strong><\/td>
+    <td class="td-muted">${fmtDate(r.trial_date)}<\/td>
+    <td>${r.assigned_person||'—'}<\/td>
     <td style="max-width:220px">
-      ${r.ai_summary?`<div style="font-size:0.76rem;color:var(--text)">${r.ai_summary.slice(0,100)}…</div>`:'<span class="td-muted">No summary</span>'}
-    </td>
-    <td style="max-width:160px;font-size:0.78rem">${r.notes||'—'}</td>
-    <td>${r.google_drive_link?`<a href="${r.google_drive_link}" target="_blank" class="drive-link">📁 Open</a>`:'—'}</td>
-    <td class="td-muted">${r.last_updated_by||'—'}</td>
-    <td class="officer-only"><div style="display:flex;gap:5px"><button class="btn btn-secondary btn-sm" onclick="editTrial(${r.id})">✏️</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteTrial(${r.id})">🗑</button>
-      </div>
-    </td>
-  </tr>`).join('');
+      ${r.ai_summary?`<div style="font-size:0.76rem;color:var(--text)">${r.ai_summary.slice(0,100)}…<\/div>`:'<span class="td-muted">No summary<\/span>'}
+    <\/td>
+    <td style="max-width:160px;font-size:0.78rem">${r.notes||'—'}<\/td>
+    <td>${r.google_drive_link?`<a href="${r.google_drive_link}" target="_blank" class="drive-link">📁 Open<\/a>`:'—'}<\/td>
+    <td class="td-muted">${r.last_updated_by||'—'}<\/td>
+    <td class="officer-only"><div style="display:flex;gap:5px"><button class="btn btn-secondary btn-sm" onclick="editTrial(${r.id})">✏️<\/button>
+        <button class="btn btn-danger btn-sm" onclick="deleteTrial(${r.id})">🗑<\/button>
+      <\/div>
+    <\/td>
+  <\/tr>`).join('');
 }
 
 async function generateAISummary() {
@@ -2840,9 +2840,9 @@ function onMentionInput(input) {
   if (!filtered.length) { dd.style.display = 'none'; return; }
   dd.innerHTML = filtered.map(n => `
     <div class="mention-dd-item" onclick="addMention('${n}')">
-      <span style="font-size:0.9rem">👤</span>
-      <span>${n.replace(new RegExp(val,'gi'), m=>`<span class="mention-highlight">${m}</span>`)}</span>
-    </div>`).join('');
+      <span style="font-size:0.9rem">👤<\/span>
+      <span>${n.replace(new RegExp(val,'gi'), m=>`<span class="mention-highlight">${m}<\/span>`)}<\/span>
+    <\/div>`).join('');
   dd.style.display = 'block';
 }
 
@@ -2863,7 +2863,7 @@ function removeMention(name) {
 function renderMentionTags() {
   const box = document.getElementById('mention-tags');
   box.innerHTML = currentMentions.map(m => `
-    <span class="mention-chip">@${m}<span class="rm" onclick="removeMention('${m}')">✕</span></span>
+    <span class="mention-chip">@${m}<span class="rm" onclick="removeMention('${m}')">✕<\/span><\/span>
   `).join('');
 }
 
@@ -2935,21 +2935,21 @@ function renderSOPGrid() {
     return `
     <div class="sop-card">
       <div class="sop-card-header">
-        <div class="sop-card-icon">${item.icon}</div>
-        <div class="sop-card-title">${item.label}</div>
-      </div>
-      ${notes ? `<div class="sop-card-notes">${notes}</div>` : '<div class="sop-card-notes" style="color:var(--blue-200);font-style:italic">No description yet</div>'}
+        <div class="sop-card-icon">${item.icon}<\/div>
+        <div class="sop-card-title">${item.label}<\/div>
+      <\/div>
+      ${notes ? `<div class="sop-card-notes">${notes}<\/div>` : '<div class="sop-card-notes" style="color:var(--blue-200);font-style:italic">No description yet<\/div>'}
       <div class="sop-card-actions">
         <a class="sop-link-btn${hasLink ? '' : ' empty'}" href="${rec.google_drive_link || '#'}" target="_blank" ${!hasLink ? 'tabindex="-1"' : ''}>
           📁 ${hasLink ? 'Open Drive' : 'No link yet'}
-        </a>
-        <button class="sop-edit-btn officer-only" onclick="editSOP('${item.key}')">✏️ Edit</button>
-      </div>
+        <\/a>
+        <button class="sop-edit-btn officer-only" onclick="editSOP('${item.key}')">✏️ Edit<\/button>
+      <\/div>
       <div class="sop-card-meta">
-        <span>Updated by: <strong>${updatedBy}</strong></span>
-        <span>${updatedAt}</span>
-      </div>
-    </div>`;
+        <span>Updated by: <strong>${updatedBy}<\/strong><\/span>
+        <span>${updatedAt}<\/span>
+      <\/div>
+    <\/div>`;
   }).join('');
   // Apply role visibility
   if (currentRole === 'field') {
@@ -3015,12 +3015,12 @@ function fmtDate(d) {
 
 function statusBadge(s) {
   const map = { Pending:'pending', Ongoing:'ongoing', Completed:'completed', Overdue:'overdue' };
-  return `<span class="badge ${map[s]||'pending'}">${s}</span>`;
+  return `<span class="badge ${map[s]||'pending'}">${s}<\/span>`;
 }
 
 function priorityBadge(p) {
   const map = { Low:'low', Medium:'medium', High:'high', Urgent:'urgent' };
-  return `<span class="badge ${map[p]||'medium'}">${p}</span>`;
+  return `<span class="badge ${map[p]||'medium'}">${p}<\/span>`;
 }
 
 function showToast(msg, type='info') {
@@ -3095,8 +3095,8 @@ function renderCalendarTable() {
   const isField = currentRole === 'field';
   const thead = document.getElementById('calendar-thead-row');
   if (!thead) return;
-  thead.innerHTML = '<th style="min-width:160px;position:sticky;left:0;background:var(--surface);z-index:2">Product</th>' +
-    CAL_MONTHS.map(m => `<th style="text-align:center;min-width:90px">${m} 2026</th>`).join('');
+  thead.innerHTML = '<th style="min-width:160px;position:sticky;left:0;background:var(--surface);z-index:2">Product<\/th>' +
+    CAL_MONTHS.map(m => `<th style="text-align:center;min-width:90px">${m} 2026<\/th>`).join('');
   const tbody = document.getElementById('calendar-tbody');
   tbody.innerHTML = _sensoryProducts.map(prod => {
     const cells = CAL_MONTHS.map((m,i) => {
@@ -3104,15 +3104,15 @@ function renderCalendarTable() {
       const c = _sensoryCells[key];
       const hasC = c && (c.text||'').trim();
       const inner = hasC
-        ? `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#3b82f6;vertical-align:middle"></span>`
-        : `<span style="color:#94a3b8;font-size:1.2rem;line-height:1">+</span>`;
+        ? `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#3b82f6;vertical-align:middle"><\/span>`
+        : `<span style="color:#94a3b8;font-size:1.2rem;line-height:1">+<\/span>`;
       return `<td data-prod="${prod.name.replace(/"/g,'&quot;')}" data-month="${i}"
         style="text-align:center;cursor:pointer;padding:12px 4px;transition:background 0.15s"
         onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background=''"
-        title="${prod.name} — ${m} 2026">${inner}</td>`;
+        title="${prod.name} — ${m} 2026">${inner}<\/td>`;
     }).join('');
-    const del = isField ? '' : `<button class="btn btn-secondary btn-sm" style="margin-left:6px;padding:2px 6px;font-size:0.7rem" data-remove="${prod.name.replace(/"/g,'&quot;')}" title="Remove product">✕</button>`;
-    return `<tr><td style="font-weight:600;position:sticky;left:0;background:var(--surface);white-space:nowrap">${prod.name}${del}</td>${cells}</tr>`;
+    const del = isField ? '' : `<button class="btn btn-secondary btn-sm" style="margin-left:6px;padding:2px 6px;font-size:0.7rem" data-remove="${prod.name.replace(/"/g,'&quot;')}" title="Remove product">✕<\/button>`;
+    return `<tr><td style="font-weight:600;position:sticky;left:0;background:var(--surface);white-space:nowrap">${prod.name}${del}<\/td>${cells}<\/tr>`;
   }).join('');
 
   // Attach clicks via event delegation on tbody
@@ -3399,13 +3399,13 @@ function renderCalGrid(trainings, todos, announcements) {
 
   // Header row
   let html = `<div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border-bottom:2px solid var(--border)">
-    ${CAL_DAY_NAMES.map(d=>`<div style="padding:8px 4px;text-align:center;font-size:0.68rem;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:var(--text-muted)">${d}</div>`).join('')}
-  </div>
+    ${CAL_DAY_NAMES.map(d=>`<div style="padding:8px 4px;text-align:center;font-size:0.68rem;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:var(--text-muted)">${d}<\/div>`).join('')}
+  <\/div>
   <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr))">`;
 
   // Empty cells before month starts
   for (let i = 0; i < firstDay; i++) {
-    html += `<div style="border-right:1px solid var(--border);border-bottom:1px solid var(--border);background:#f9fafb;padding:6px 4px;min-height:90px"></div>`;
+    html += `<div style="border-right:1px solid var(--border);border-bottom:1px solid var(--border);background:#f9fafb;padding:6px 4px;min-height:90px"><\/div>`;
   }
 
   for (let day = 1; day <= daysInMonth; day++) {
@@ -3419,18 +3419,18 @@ function renderCalGrid(trainings, todos, announcements) {
     const shown = evs.slice(0, maxShow);
     const extra = evs.length - maxShow;
 
-    const todayNum = isToday ? `<span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--blue-600);color:#fff;font-size:0.78rem;font-weight:800">${day}</span>` : `<span style="font-size:0.8rem;font-weight:600;color:var(--text)">${day}</span>`;
+    const todayNum = isToday ? `<span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--blue-600);color:#fff;font-size:0.78rem;font-weight:800">${day}<\/span>` : `<span style="font-size:0.8rem;font-weight:600;color:var(--text)">${day}<\/span>`;
 
     html += `<div onclick="showDayPanel('${ds}')"
       style="border-right:${borderRight};border-bottom:1px solid var(--border);padding:6px 4px;min-height:90px;cursor:pointer;transition:background 0.14s;background:${isToday?'#eff6ff':'var(--surface)'};overflow:hidden"
       onmouseover="this.style.background='${isToday?'#dbeafe':'#f5f9ff'}'" onmouseout="this.style.background='${isToday?'#eff6ff':'var(--surface)'}'">
-      <div style="margin-bottom:4px">${todayNum}</div>
+      <div style="margin-bottom:4px">${todayNum}<\/div>
       ${shown.map(e => {
         const c = typeColors[e.type]||typeColors.event;
-        return `<div style="background:${c.bg};color:${c.text};border-radius:3px;padding:1px 4px;font-size:0.62rem;font-weight:600;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%">${e.title}</div>`;
+        return `<div style="background:${c.bg};color:${c.text};border-radius:3px;padding:1px 4px;font-size:0.62rem;font-weight:600;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%">${e.title}<\/div>`;
       }).join('')}
-      ${extra > 0 ? `<div style="font-size:0.6rem;color:var(--text-muted);font-weight:600">+${extra} more</div>` : ''}
-    </div>`;
+      ${extra > 0 ? `<div style="font-size:0.6rem;color:var(--text-muted);font-weight:600">+${extra} more<\/div>` : ''}
+    <\/div>`;
   }
 
   // Trailing empty cells
@@ -3438,14 +3438,14 @@ function renderCalGrid(trainings, todos, announcements) {
   const trailingCells = (7 - (totalCells % 7)) % 7;
   for (let i = 0; i < trailingCells; i++) {
     const col = (totalCells + i) % 7;
-    html += `<div style="border-right:${col<6?'1px solid var(--border)':'none'};border-bottom:1px solid var(--border);background:#f9fafb;min-height:90px"></div>`;
+    html += `<div style="border-right:${col<6?'1px solid var(--border)':'none'};border-bottom:1px solid var(--border);background:#f9fafb;min-height:90px"><\/div>`;
   }
 
-  html += '</div>';
+  html += '<\/div>';
   document.getElementById('cal-grid').innerHTML = html;
   // Reset day panel to placeholder when navigating
   document.getElementById('cal-day-panel-title').textContent = '— CLICK A DATE TO SEE EVENTS —';
-  document.getElementById('cal-day-panel-list').innerHTML = '<div style="color:var(--text-muted);font-size:0.85rem">Select any date on the calendar above.</div>';
+  document.getElementById('cal-day-panel-list').innerHTML = '<div style="color:var(--text-muted);font-size:0.85rem">Select any date on the calendar above.<\/div>';
 }
 
 function showDayPanel(dateStr) {
@@ -3465,9 +3465,9 @@ function showDayPanel(dateStr) {
   };
   const isOfficer = currentRole === 'officer';
   if (!evs.length) {
-    list.innerHTML = `<div style="color:var(--text-muted);font-size:0.85rem;padding:4px 0">No events on this day.${isOfficer?' <a href="javascript:void(0)" style="color:var(--blue-600);font-weight:600" onclick="openCalEventModal(\''+dateStr+'\')">+ Add one</a>':''}</div>`;
+    list.innerHTML = `<div style="color:var(--text-muted);font-size:0.85rem;padding:4px 0">No events on this day.${isOfficer?' <a href="javascript:void(0)" style="color:var(--blue-600);font-weight:600" onclick="openCalEventModal(\''+dateStr+'\')">+ Add one<\/a>':''}<\/div>`;
   } else {
-    const addBtn = isOfficer ? `<div style="margin-top:10px"><a href="javascript:void(0)" style="color:var(--blue-600);font-size:0.82rem;font-weight:600" onclick="openCalEventModal('${dateStr}')">+ Add event</a></div>` : '';
+    const addBtn = isOfficer ? `<div style="margin-top:10px"><a href="javascript:void(0)" style="color:var(--blue-600);font-size:0.82rem;font-weight:600" onclick="openCalEventModal('${dateStr}')">+ Add event<\/a><\/div>` : '';
     list.innerHTML = evs.map(e => {
       const c = typeColors[e.type]||typeColors.event;
       const isReminder = e.type === 'reminder';
@@ -3475,23 +3475,23 @@ function showDayPanel(dateStr) {
       const deleteBtn = canDelete
         ? `<button onclick="deleteCalEvent(${e.evId})" title="Delete event"
             style="flex-shrink:0;background:none;border:1px solid #fca5a5;color:#ef4444;border-radius:6px;padding:3px 9px;font-size:0.72rem;cursor:pointer;transition:background 0.15s"
-            onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='none'">🗑 Delete</button>`
+            onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='none'">🗑 Delete<\/button>`
         : '';
       const reminderBadge = (!isReminder && e.reminder_date)
-        ? `<span style="display:inline-flex;align-items:center;gap:3px;background:#fef3c7;color:#b45309;border-radius:5px;padding:1px 7px;font-size:0.68rem;font-weight:600;margin-left:6px">🔔 ${fmtDate(e.reminder_date)}</span>`
+        ? `<span style="display:inline-flex;align-items:center;gap:3px;background:#fef3c7;color:#b45309;border-radius:5px;padding:1px 7px;font-size:0.68rem;font-weight:600;margin-left:6px">🔔 ${fmtDate(e.reminder_date)}<\/span>`
         : '';
-      const notesHtml = e.notes ? `<div style="margin-top:3px;font-size:0.75rem;color:var(--text-muted)">${e.notes}</div>` : '';
+      const notesHtml = e.notes ? `<div style="margin-top:3px;font-size:0.75rem;color:var(--text-muted)">${e.notes}<\/div>` : '';
       return `<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:9px;background:${c.bg};border-left:4px solid ${c.border};margin-bottom:8px">
         <div style="flex:1;min-width:0">
           <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px">
-            <span style="font-weight:700;color:${c.text};font-size:0.88rem">${e.title}</span>
+            <span style="font-weight:700;color:${c.text};font-size:0.88rem">${e.title}<\/span>
             ${reminderBadge}
-          </div>
-          <div style="font-size:0.7rem;color:var(--text-muted);margin-top:2px">${c.label}</div>
+          <\/div>
+          <div style="font-size:0.7rem;color:var(--text-muted);margin-top:2px">${c.label}<\/div>
           ${notesHtml}
-        </div>
+        <\/div>
         ${deleteBtn}
-      </div>`;
+      <\/div>`;
     }).join('') + addBtn;
   }
   panel.style.display = 'block';
@@ -3565,24 +3565,32 @@ function renderAnnouncePage() {
   if (!sorted.length) { wrap.innerHTML=''; empty.style.display='block'; return; }
   empty.style.display='none';
   const isOfficer = currentRole === 'officer';
+  window._announceMap = {};
+  sorted.forEach(a => { window._announceMap[a.id] = a; });
   wrap.innerHTML = sorted.map(a => {
-    const safeMsg = a.message||'';
-    const typeColor = {'urgent':'#fee2e2','training':'#eff6ff','event':'#f5f3ff','todo':'#fffbeb'}['announce']||'#f0fdf4';
+    const safeMsg = (msg => msg.includes('<') ? msg : msg.replace(/\\n/g,'<br>').replace(/\n/g,'<br>'))(a.message||'');
     return `
     <div style="border:1px solid var(--border);border-left:4px solid var(--green);border-radius:10px;padding:14px;background:#f0fdf4" id="announce-card-${a.id}">
       <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start">
-        <div style="font-weight:700;color:var(--text);font-size:1.05rem">${(a.title||'(untitled)')}</div>
+        <div style="font-weight:700;color:var(--text);font-size:1.05rem">${a.title||'(untitled)'}<\/div>
         <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-          <div style="font-size:0.78rem;color:var(--text-muted);white-space:nowrap">${new Date(a.posted_at||a.last_updated_at||Date.now()).toLocaleString()}</div>
-          <button onclick="summarizeAnnouncement(${a.id}, ${JSON.stringify((a.title||'')).replace(/'/g,"\\'")} , ${JSON.stringify((a.message||'')).replace(/'/g,"\\'")})" title="AI Summary" style="background:linear-gradient(135deg,#7c3aed,#a855f7);border:none;color:#fff;border-radius:6px;padding:3px 8px;font-size:0.72rem;cursor:pointer;line-height:1.4;display:inline-flex;align-items:center;gap:3px;font-weight:600" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">✨ AI Summary</button>
-          ${isOfficer ? `<button onclick="deleteAnnouncement(${a.id})" title="Delete announcement" style="background:none;border:1px solid #fca5a5;color:#ef4444;border-radius:6px;padding:3px 7px;font-size:0.75rem;cursor:pointer;line-height:1;transition:all 0.15s" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='none'">🗑</button>` : ''}
-        </div>
-      </div>
-      <div style="margin-top:6px;color:var(--text-2);line-height:1.6">${safeMsg}</div>
-      <div id="announce-summary-${a.id}" style="display:none;margin-top:10px;background:#fff;border:1.5px solid #a855f7;border-radius:8px;padding:10px 14px"></div>
-      <div style="margin-top:8px;font-size:0.8rem;color:var(--text-muted)">Posted by <strong>${a.posted_by||'—'}</strong></div>
-    </div>`;
+          <div style="font-size:0.78rem;color:var(--text-muted);white-space:nowrap">${new Date(a.posted_at||a.last_updated_at||Date.now()).toLocaleString()}<\/div>
+          <button data-summarize="${a.id}" title="AI Summary" style="background:linear-gradient(135deg,#7c3aed,#a855f7);border:none;color:#fff;border-radius:6px;padding:3px 8px;font-size:0.72rem;cursor:pointer;line-height:1.4;display:inline-flex;align-items:center;gap:3px;font-weight:600">✨ AI Summary<\/button>
+          ${isOfficer ? `<button onclick="deleteAnnouncement(${a.id})" title="Delete" style="background:none;border:1px solid #fca5a5;color:#ef4444;border-radius:6px;padding:3px 7px;font-size:0.75rem;cursor:pointer">🗑<\/button>` : ''}
+        <\/div>
+      <\/div>
+      <div style="margin-top:6px;color:var(--text-2);line-height:1.6">${safeMsg}<\/div>
+      <div id="announce-summary-${a.id}" style="display:none;margin-top:10px;background:#fff;border:1.5px solid #a855f7;border-radius:8px;padding:10px 14px"><\/div>
+      <div style="margin-top:8px;font-size:0.8rem;color:var(--text-muted)">Posted by <strong>${a.posted_by||'—'}<\/strong><\/div>
+    <\/div>`;
   }).join('');
+  wrap.onclick = function(e) {
+    const btn = e.target.closest('[data-summarize]');
+    if (!btn) return;
+    const id = parseInt(btn.dataset.summarize);
+    const a = window._announceMap[id];
+    if (a) summarizeAnnouncement(id, a.title||'', a.message||'');
+  };
 }
 
 async function deleteAnnouncement(id) {
@@ -3608,9 +3616,9 @@ async function summarizeAnnouncement(id, title, message) {
   summaryEl.style.display = 'block';
   summaryEl.innerHTML = `
     <div style="display:flex;align-items:center;gap:8px;color:#7c3aed;font-size:0.82rem;font-weight:600">
-      <span style="display:inline-block;width:14px;height:14px;border:2px solid #a855f7;border-top-color:transparent;border-radius:50%;animation:spin 0.7s linear infinite"></span>
+      <span style="display:inline-block;width:14px;height:14px;border:2px solid #a855f7;border-top-color:transparent;border-radius:50%;animation:spin 0.7s linear infinite"><\/span>
       Generating AI summary…
-    </div>`;
+    <\/div>`;
 
   try {
     const res = await fetch('/api/public/ai-summarize', {
@@ -3627,11 +3635,11 @@ async function summarizeAnnouncement(id, title, message) {
 
     summaryEl.innerHTML = `
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:7px">
-        <span style="font-size:0.7rem;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;color:#7c3aed;background:#f5f3ff;border-radius:4px;padding:2px 7px">✨ AI Summary</span>
-      </div>
-      <div style="font-size:0.83rem;color:var(--text);line-height:1.7;white-space:pre-line">${text.replace(/</g,'&lt;')}</div>`;
+        <span style="font-size:0.7rem;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;color:#7c3aed;background:#f5f3ff;border-radius:4px;padding:2px 7px">✨ AI Summary<\/span>
+      <\/div>
+      <div style="font-size:0.83rem;color:var(--text);line-height:1.7;white-space:pre-line">${text.replace(/&/g,'&amp;').replace(/[<]/g,'&lt;')}<\/div>`;
   } catch(err) {
-    summaryEl.innerHTML = `<div style="color:var(--red);font-size:0.8rem">⚠️ Could not generate summary: ${err.message}</div>`;
+    summaryEl.innerHTML = `<div style="color:var(--red);font-size:0.8rem">⚠️ Could not generate summary: ${err.message}<\/div>`;
   }
 }
 
